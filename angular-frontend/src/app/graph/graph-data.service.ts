@@ -13,7 +13,7 @@ type UnwrapSignal<T> = T extends import('@angular/core').Signal<infer U> ? U : n
 @Injectable()
 export class DataSourceService {
   private readonly $graphDimensions = signal({ width: 800, height: 600 });
-  private readonly $xDomain = signal([new Date(0), new Date(0)]); // wtf why do we init x axis with date objects!!!!
+  private readonly $xDomain = signal([new Date(0), new Date(0)]); 
   private readonly $yDomain = signal([0, 100]); 
   private readonly dataSourceSelectionService = inject(DataSourceSelectionService);
   private firstTimestamp = 0;
