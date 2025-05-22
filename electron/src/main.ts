@@ -86,7 +86,7 @@ const menuScope = [
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Information',
-          message: `Electron v${versionInfo.electronVersion}\nAngular v${versionInfo.angularVersion}\n\nMIT © ${new Date().getFullYear()} AI-Gruppe `,
+          message: `electron-v.${versionInfo.electronVersion}\nangular-v.${versionInfo.angularVersion}\n${versionInfo.generatedAt}\n\nMIT © ${new Date().getFullYear()} AI-Gruppe`,
           buttons: ['OK']
         })
       }
