@@ -1,15 +1,23 @@
 import { app, BrowserWindow, ipcMain, shell, Menu, dialog} from 'electron';
 import * as path from "path";
+import * as fs from 'fs';
 import { omnaiscopeBackendManager } from './omnaiBackend';
-import versionInfo from '../version-info.json';
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
 let mainWindow: BrowserWindow;
-const electronVersion: string = "123";
 
+function getVersionPath(): string {
+  const versionPath: string = app.isPackaged 
+    ? path.join(process.resourcesPath, "version.json")
+    : path.join(__dirname, "..", "src", "version.json")
+
+    return versionPath; 
+}
+
+const versionInfo = JSON.parse(fs.readFileSync(getVersionPath(), 'utf-8'));
 
 const createWindow = (): void => {
   // Create the browser window.
@@ -78,10 +86,7 @@ const menuScope = [
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Information',
-          message: `Electron v${versionInfo.electronVersion}
-                    Angular v${versionInfo.angularVersion}
-                    
-          MIT © AI-Gruppe ${new Date().getFullYear()}`,
+          message: `Electron v${versionInfo.electronVersion}\nAngular v${versionInfo.angularVersion}\n\nMIT © ${new Date().getFullYear()} AI-Gruppe `,
           buttons: ['OK']
         })
       }
@@ -116,7 +121,6 @@ ipcMain.handle('get-omnaiscope-backend-port', async () => {
 
 app.whenReady().then(() => {
   createWindow();
-  console.log('Electron app version:', electronVersion);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

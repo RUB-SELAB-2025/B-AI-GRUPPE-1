@@ -13,7 +13,7 @@ const versionInfo = {
     generatedAt: new Date().toISOString()
 };
 
-const outputPath = path.join(__dirname, '/electron/version-info.json');
+const outputPath = path.join(__dirname, '/electron/src/version.json');
 
 fs.writeFileSync(outputPath, JSON.stringify(versionInfo, null, 2), 'utf-8');
 console.log(versionInfo);
