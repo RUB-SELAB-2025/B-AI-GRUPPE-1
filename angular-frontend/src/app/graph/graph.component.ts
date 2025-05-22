@@ -66,7 +66,7 @@ export class GraphComponent {
 
   updateXAxisInCanvas = effect(() => {
     if (!this.isInBrowser) return;
-    const formatElapsed = timeFormat('%M.%S.%L');
+    const formatElapsed = timeFormat('%M.%S');
     const x = this.dataservice.xScale()
     const g = this.axesContainer().nativeElement;
     select(g)
