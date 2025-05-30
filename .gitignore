@@ -140,3 +140,7 @@ electron/.vite/
 electron/out/
 electron/dist/
 electron/res/angular
+
+.idea
+
+electron/src/version.json
