@@ -47,85 +47,29 @@ The project currently contains two separat parts: An angular app and an electron
    cd OmnAIView
    ```
 
-### How to run the angular project
+## Package Installation
 
-Navigate inside the angular-frontend folder:
-
-```
-cd angular-frontend
-```
-
-Install needed packages :
-
-```
-npm install
-npm ci
-```
+To install the angular and electron packages, you run ```npm run install:all``` in the root directory.
 
 #### Development Mode
 
-To start a local development server run:
-
-```bash
-ng serve
-```
+If you want to run the angular frontend in development mode, you can do so by running ```npm run start:dev``` in the root folder. 
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+If you want to run the electron application seperately in development mode, you can do so by running ```npm run start:electron```.
+
 #### Building
 
-To build the project run:
+To build the full project you can do so by running ```npm run build```. 
 
-```bash
-ng build
-```
+This will compile the angular frontend and electron project and store the build artifacts of the frontend in the `dist/` directory. By default, the production build optimizes your application for performance and speed. The electron build installer can be found in the `electron/out/make/squirrel.windows/x64/`, the application that can be run without installation `electron\out\OmnAIView-win32-x64`.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-#### Technical infos about the angular project
+#### Technical Information
+  
 The project was generated using angular v19.1.4.
 
-### How to run the electron project
-
-#### Build angular project first
-
-Navigate inside the angular-frontend folder:
-
-```
-cd angular-frontend
-```
-
-To build the project run:
-
-```bash
-ng build
-```
-
-#### Navigate into the electron folder
-
-```
-cd ../electron/
-```
-
-#### Development mode
-
-To start a local development application run:
-
-```
-npm start
-```
-
-#### Build the project
-
-To build the project run :
-
-```
-npm run make
-```
-
-The output is an installer for the application in ```electron/out/make/squirrel.windows/x64/``` for windows
-
-## Technical Information about Datasources
+### Technical Information about Datasources
 
 OmnAIView is using different data sources. Some are started externally from the application, while others are started together with the application.
 
