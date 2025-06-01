@@ -13,6 +13,7 @@ angular-frontend/npm-debug.log
 angular-frontend/yarn-error.log
 
 # IDEs and editors
+.idea
 angular-frontend/.idea/
 angular-frontend/.project
 angular-frontend/.classpath
@@ -30,6 +31,7 @@ angular-frontend/.vscode/*
 angular-frontend/.history/*
 
 # Miscellaneous
+electron/src/version.json
 angular-frontend/.angular/*
 angular-frontend/.angular/cache
 angular-frontend/.sass-cache/
