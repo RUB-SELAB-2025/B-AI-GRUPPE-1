@@ -1,4 +1,4 @@
-backend: build build/main.o build/data.o build/incoming.o build/outgoing.o 
+backend: build build/main.o build/data.o build/incoming.o build/outgoing.o config.h
 	gcc -o backend build/main.o build/data.o build/incoming.o build/outgoing.o -lwebsockets
 
 build/main.o: main.c

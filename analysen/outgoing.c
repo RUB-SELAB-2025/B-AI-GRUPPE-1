@@ -1,5 +1,6 @@
 #include "outgoing.h"
 #include <libwebsockets.h>
+#include <stdbool.h>
 #include "data.h"
 
 ///// DATA /////
@@ -15,14 +16,15 @@ static struct lws_protocols outgoing_protocols[] =  {
                                                         LWS_PROTOCOL_LIST_TERM
                                                     };
 static struct lws_context *context;
+static bool websockedConnected = false;
 
 ///// FUNCTIONS /////
 static int 
 outgoing_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
     switch (reason) {
-        case LWS_CALLBACK_HTTP: {
-            // Hier den URI des Antrags überprüfen
+        case LWS_CALLBACK_HTTP: 
+        {   // Hier den URI des Antrags überprüfen
             char uri[256];
             int n = lws_hdr_copy(wsi, uri, sizeof(uri), WSI_TOKEN_GET_URI);
 
@@ -47,6 +49,48 @@ outgoing_callback(struct lws *wsi, enum lws_callback_reasons reason, void *user,
                 const char *error_message = "404 Not Found";
                 lws_write(wsi, (unsigned char *)error_message, strlen(error_message), LWS_WRITE_HTTP);
             }
+            break;
+        }
+        
+        case LWS_CALLBACK_RECEIVE:
+        {   printf("websocket receive\n");
+            lws_callback_on_writable(wsi);
+            break;
+        }
+        
+        case LWS_CALLBACK_ESTABLISHED: 
+        {   printf("connection established\n");
+            websockedConnected = true;
+            break;
+        }
+
+        case LWS_CALLBACK_WS_PEER_INITIATED_CLOSE: 
+        {   printf("connection closed\n");
+            websockedConnected = false;
+            break;
+        }
+
+        case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION: 
+        {   if (websockedConnected)
+            {   printf("connection rejected. Another connection is still running!\n");
+                return 1;
+            }
+            break;
+        }
+        
+        case LWS_CALLBACK_SERVER_WRITEABLE: 
+        {   unsigned char response[98 + LWS_PRE] = {0};
+            unsigned char* res = response;
+            unsigned char** bufferPosition = &res;
+            unsigned char*  bufferEnd = response+sizeof(response);
+            
+            char* dataPointJsonString;
+            int dataPointJsonStringLength;
+            if (DATA_pullSendDataQueueJson(&dataPointJsonString, &dataPointJsonStringLength) == 0)
+            {   snprintf(*bufferPosition, bufferEnd-*bufferPosition, dataPointJsonString);
+                lws_write(wsi, response, dataPointJsonStringLength-1, LWS_WRITE_TEXT);
+            }
+            lws_callback_on_writable(wsi);
             break;
         }
         default:
