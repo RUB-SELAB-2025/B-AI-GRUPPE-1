@@ -6,6 +6,7 @@ angular-frontend/tmp
 angular-frontend/out-tsc
 angular-frontend/bazel-out
 angular-frontend/documentation 
+analysen/build/
 
 # Node
 angular-frontend/node_modules
@@ -20,7 +21,6 @@ angular-frontend/.c9/
 angular-frontend/*.launch
 angular-frontend/.settings/
 angular-frontend/*.sublime-workspace
-analysen/.vscode/
 
 # Visual Studio Code
 angular-frontend/.vscode/*
@@ -29,6 +29,7 @@ angular-frontend/.vscode/*
 !angular-frontend/.vscode/launch.json
 !angular-frontend/.vscode/extensions.json
 angular-frontend/.history/*
+analysen/.vscode/
 
 # Miscellaneous
 angular-frontend/.angular/*
