@@ -20,6 +20,7 @@ angular-frontend/.c9/
 angular-frontend/*.launch
 angular-frontend/.settings/
 angular-frontend/*.sublime-workspace
+analysen/.vscode/
 
 # Visual Studio Code
 angular-frontend/.vscode/*
