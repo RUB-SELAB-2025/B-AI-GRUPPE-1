@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { DataSource } from '../../source-selection/data-source-selection.service';
 import { BackendPortService } from './backend-port.service';
+import {catchError, Observable, of, Subject, switchMap, takeUntil, timer} from 'rxjs';
+import {map} from 'rxjs/operators';
 
 interface DeviceInformation {
   UUID: string;
@@ -26,7 +28,25 @@ interface DeviceOverview {
 @Injectable({
   providedIn: 'root'
 })
-export class OmnAIScopeDataService implements DataSource{
+export class OmnAIScopeDataService implements DataSource {
+
+
+  private serverUrl = '127.0.0.1:8080';
+  private readonly destroy$ = new Subject<void>();
+
+  constructor() {
+    this.init();
+    this.getAvailableDevices();
+  }
+
+  async init(): Promise<void> {
+    const port = await window.electronAPI?.getOmnAIScopeBackendPort();
+    if (port) {
+      this.setServerUrl(`127.0.0.1:${port}`);
+    } else {
+      console.error('unable to set backend port');
+    }
+  }
 
   private socket: WebSocket | null = null;
 
@@ -71,6 +91,39 @@ export class OmnAIScopeDataService implements DataSource{
         console.error('Fehler beim Abrufen der Geräte:', error);
       }
     });
+
+
+  private getAvailableDevices(): void {
+    timer(0, 15000)
+      .pipe(
+        switchMap(() => this.getDevices()),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(devices => {
+        this.devices.set(devices);
+      });
+  }
+
+  // Abrufen der verfügbaren Geräte vom Server
+  public getDevices(): Observable<DeviceInformation[]> {
+    console.log("called getDevices")
+    const url = `http://${this.serverUrl}/UUID`;
+
+    return this.#httpClient.get<Partial<DeviceOverview>>(url).pipe(
+      map(response => {
+        const devices = response.devices ?? [];
+        const colors = response.colors ?? [];
+
+        return devices.map((device, index) => ({
+          UUID: device.UUID,
+          color: colors[index]?.color ?? {r: 0, g: 0, b: 0}
+        }));
+      }),
+      catchError(error => {
+        console.warn('error while loading devices', error);
+        return of([]);
+      })
+    );
   }
 
   connect(): void {
@@ -120,7 +173,7 @@ export class OmnAIScopeDataService implements DataSource{
             records[uuid] = existingData.concat(newDataPoints);
           });
 
-          return { ...records };
+          return {...records};
         });
       } else {
         console.warn('Unbekanntes Nachrichtenformat:', parsedMessage);
