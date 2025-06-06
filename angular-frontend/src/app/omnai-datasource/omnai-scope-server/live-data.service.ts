@@ -2,6 +2,7 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { DataSource } from '../../source-selection/data-source-selection.service';
+import { BackendPortService } from './backend-port.service';
 import {catchError, Observable, of, Subject, switchMap, takeUntil, timer} from 'rxjs';
 import {map} from 'rxjs/operators';
 
@@ -28,6 +29,7 @@ interface DeviceOverview {
   providedIn: 'root'
 })
 export class OmnAIScopeDataService implements DataSource {
+
 
   private serverUrl = '127.0.0.1:8080';
   private readonly destroy$ = new Subject<void>();
@@ -63,6 +65,33 @@ export class OmnAIScopeDataService implements DataSource {
   });
 
   readonly #httpClient = inject(HttpClient);
+  readonly port = inject(BackendPortService).port;
+  readonly serverUrl = computed(() => {
+    const port = this.port();
+    if (port === null) throw new Error('Port not initialized');
+    return `127.0.0.1:${port}`;
+  });
+
+  // Abrufen der verfügbaren Geräte vom Server
+  getDevices(): void {
+    const url = `http://${this.serverUrl()}/UUID`;
+    console.log("Current OmnAIScope Datatserver Backend URL (Angular):", url);
+    this.#httpClient.get<DeviceOverview>(url).subscribe({
+      next: (response) => {
+        console.log("got response", response)
+        if (response.devices && response.colors) {
+          const mappedDevices = response.devices.map((device, index) => ({
+            UUID: device.UUID,
+            color: response.colors[index]?.color ?? { r: 0, g: 0, b: 0 },
+          }));
+          this.devices.set(mappedDevices);
+        }
+      },
+      error: (error) => {
+        console.error('Fehler beim Abrufen der Geräte:', error);
+      }
+    });
+
 
   private getAvailableDevices(): void {
     timer(0, 15000)
@@ -103,7 +132,7 @@ export class OmnAIScopeDataService implements DataSource {
       return;
     }
 
-    const wsUrl = `ws://${this.serverUrl}/ws`;
+    const wsUrl = `ws://${this.serverUrl()}/ws`;
     this.socket = new WebSocket(wsUrl);
 
     this.socket.addEventListener('open', () => {
@@ -112,7 +141,10 @@ export class OmnAIScopeDataService implements DataSource {
 
       // Send start message
       const deviceUuids = this.devices().map(device => device.UUID).join(" ");
-      this.socket?.send(JSON.stringify(deviceUuids));
+      if(!this.socket){
+        throw new Error("Websocket is not defined"); 
+      }
+      this.socket.send(deviceUuids); 
     });
 
     let ignoreCounter = 0;
@@ -166,11 +198,6 @@ export class OmnAIScopeDataService implements DataSource {
       this.socket = null;
       this.isConnected.set(false);
     }
-  }
-
-  // Server-URL ändern
-  setServerUrl(url: string): void {
-    this.serverUrl = url;
   }
 
   // Typprüfung für OmnAI-Daten-Nachrichten
