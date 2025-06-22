@@ -8,6 +8,7 @@ import {
   PLATFORM_ID,
   signal,
   viewChild,
+  ViewChild,
   type ElementRef,
   AfterViewInit
 } from '@angular/core';
@@ -39,6 +40,9 @@ interface GraphComment {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GraphComponent implements AfterViewInit {
+  @ViewChild('graphContainer', { static: true })
+  graphEl!: ElementRef<SVGSVGElement>;
+
   readonly dataservice = inject(DataSourceService);
   readonly svgGraph = viewChild.required<ElementRef<SVGElement>>('graphContainer');
   readonly axesContainer = viewChild.required<ElementRef<SVGGElement>>('xAxis');
@@ -49,6 +53,7 @@ export class GraphComponent implements AfterViewInit {
   readonly fixedGuides = signal<number[]>([]);
   readonly fixedXGuides = signal<number[]>([]);
   readonly comments = signal<GraphComment[]>([]);
+  hoveredGuide = signal<number | null>(null);
 
   commentInputVisible = signal(false);
   commentInputPosition = signal({ x: 0, y: 0 });
@@ -101,15 +106,23 @@ export class GraphComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     if (this.isInBrowser) {
       this.initZoom();
-      // this.initPan();
       this.initKeyboardPan();
+      setTimeout(() => {
+    this.graphEl.nativeElement.focus();
+  });
     }
   }
 
   private initZoom() {
-    const svgElement = this.svgGraph().nativeElement;
-    svgElement.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+  const svgRef = this.svgGraph();
+  if (!svgRef) {
+    console.warn("SVG-Element nicht verfügbar");
+    return;
   }
+
+  const svgElement = svgRef.nativeElement;
+  svgElement.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+}
 
   onWheel(event: WheelEvent): void {
     if (!this.isInBrowser) return;
@@ -208,14 +221,7 @@ export class GraphComponent implements AfterViewInit {
       .text(yValue.toFixed(1));
 
     // // Vertikale Linie (+ Label) wenn es funktionieren würde
-    // container.append("line")
-    //   .attr("class", "temporary")
-    //   .attr("stroke", "darkgray")
-    //   .attr("stroke-opacity", 0.7)
-    //   .attr("y1", 0)
-    //   .attr("y2", "100%")
-    //   .attr("x1", xpos)
-    //   .attr("x2", xpos);
+    // lines -> copy above and swap out x and y
 
     // container.append("text")
     //   .attr("class", "temporary")
@@ -245,6 +251,18 @@ export class GraphComponent implements AfterViewInit {
 
     this.drawFixedLines();
   }
+
+  onKeyDown(event: KeyboardEvent) {
+    console.log('Key pressed:', event.key);
+  if (event.key === 'Backspace') {
+    const y = this.hoveredGuide();
+    if (y !== null) {
+      this.fixedGuides.update(lines => lines.filter(val => val !== y));
+      this.hoveredGuide.set(null);
+    }
+    event.preventDefault();
+  }
+}
 
   onRightClick(event: MouseEvent) {
     event.preventDefault();
@@ -361,24 +379,26 @@ export class GraphComponent implements AfterViewInit {
     container.selectAll("text.fixed").remove();
 
     // Horizontale Linien
-    container
-      .selectAll("line.fixed-h")
-      .data(visibleYGuides)
-      .join("line")
-      .attr("class", "fixed fixed-h")
-      .attr("stroke", "red")
-      .attr("stroke-width", 1)
-      .attr("stroke-dasharray", "2,2")
-      .attr("x1", 0)
-      .attr("x2", "100%")
-      .attr("y1", d => yaxis(d))
-      .attr("y2", d => yaxis(d));
+    // container
+    //   .selectAll("line.fixed-h")
+    //   .data(visibleYGuides)
+    //   .join("line")
+    //   .attr("class", "fixed fixed-h")
+    //   .attr("stroke", "red")
+    //   .attr("stroke-width", 1)
+    //   .attr("stroke-dasharray", "2,2")
+    //   .attr("pointer-events", "none")
+    //   .attr("x1", 0)
+    //   .attr("x2", "100%")
+    //   .attr("y1", d => yaxis(d))
+    //   .attr("y2", d => yaxis(d));
 
     container
       .selectAll("text.fixed-h")
       .data(visibleYGuides)
       .join("text")
       .attr("class", "fixed fixed-h")
+      .attr("pointer-events", "none")
       .attr("x", 5)
       .attr("y", d => yaxis(d) - 5)
       .attr("fill", "red")
@@ -461,16 +481,7 @@ export class GraphComponent implements AfterViewInit {
       .attr("x2", "100%");
 
     // Vertikale Linien
-    // select(g)
-    // .append("g")
-    // .attr("class", "vertical-grid")
-    // .selectAll("line")
-    // .data(x.ticks()) 
-    // .join("line")
-    // .attr("x1", d => 0.5 + x(d))
-    // .attr("x2", d => 0.5 + x(d))
-    // .attr("y1", 0)
-    // .attr("y2", "100%"); 
+    // copy above and swap x with y + it's the vertical grid 
 
     onCleanUp(() => g.innerHTML = "");
   });
