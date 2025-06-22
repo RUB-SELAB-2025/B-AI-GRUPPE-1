@@ -2,9 +2,14 @@ import { app, BrowserWindow, ipcMain, shell, Menu, dialog} from 'electron';
 import * as path from "path";
 import * as fs from 'fs';
 import { omnaiscopeBackendManager } from './omnaiBackend';
+import {analysisBackendManager} from "./analysisBackend";
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-  app.quit();
+try {
+  if (require('electron-squirrel-startup')) {
+    app.quit();
+  }
+} catch (err) {
+  console.log('electron-squirrel-startup not available:', err.message);
 }
 
 let mainWindow: BrowserWindow;
@@ -118,6 +123,14 @@ omnaiscopeBackendManager.startBackend();
 ipcMain.handle('get-omnaiscope-backend-port', async () => {
   return omnaiscopeBackendManager.getPort();
 });
+
+analysisBackendManager.startBackend();
+
+ipcMain.handle('get-analysis-backend-port', async () => {
+  return analysisBackendManager.getPort();
+});
+
+console.log("Current Analysis Backend Port is "+analysisBackendManager.getPort().toString())
 
 app.whenReady().then(() => {
   createWindow();

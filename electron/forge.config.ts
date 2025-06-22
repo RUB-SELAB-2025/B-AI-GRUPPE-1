@@ -15,7 +15,9 @@ const config: ForgeConfig = {
       "./res/omnai_BE/libusb-1.0.dll",
       "./res/omnai_BE/abseil_dll.dll",
       "./res/omnai_BE/libprotobuf.dll",
-      "./src/version.json"    
+      "./src/version.json",
+      "./res/analysis_BE/analysisBackend.exe",
+      "./res/analysis_BE/libwebsockets.dll"
     ],
   },
   rebuildConfig: {},
