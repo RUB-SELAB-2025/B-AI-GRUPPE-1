@@ -8,6 +8,8 @@ svg {
     box-sizing: border-box;
 }
 
+svg:focus, svg:focus-visible {outline:none}
+
 .comment-input {
     position: absolute;
     background: white;
