@@ -53,11 +53,35 @@ export class GraphComponent implements AfterViewInit {
   readonly fixedGuides = signal<number[]>([]);
   readonly fixedXGuides = signal<number[]>([]);
   readonly comments = signal<GraphComment[]>([]);
+  readonly currentViewBox = signal({ x: 0, y: 0, width: 500, height: 250 });
+  get defaultViewBox() {
+    return {
+      x: 0,
+      y: 0,
+      width: this.fullWidth,
+      height: this.fullHeight,
+    };
+  }
+
+  get minimapXScale() {
+    return d3.scaleLinear()
+      .domain([0, this.fullWidth])
+      .range([0, this.minimapWidth]);
+  }
+
+  get minimapYScale() {
+    return d3.scaleLinear()
+      .domain([0, this.fullHeight])
+      .range([0, this.minimapHeight]);
+  }
+
   hoveredGuide = signal<number | null>(null);
 
   commentInputVisible = signal(false);
   commentInputPosition = signal({ x: 0, y: 0 });
-  commentInputText = signal('');
+  commentInputText = signal('')
+
+  hasZoomed = false;
 
   private readonly platform = inject(PLATFORM_ID);
   isInBrowser = isPlatformBrowser(this.platform);
@@ -108,21 +132,21 @@ export class GraphComponent implements AfterViewInit {
       this.initZoom();
       this.initKeyboardPan();
       setTimeout(() => {
-    this.graphEl.nativeElement.focus();
-  });
+        this.graphEl.nativeElement.focus();
+      });
     }
   }
 
   private initZoom() {
-  const svgRef = this.svgGraph();
-  if (!svgRef) {
-    console.warn("SVG-Element nicht verfügbar");
-    return;
-  }
+    const svgRef = this.svgGraph();
+    if (!svgRef) {
+      console.warn("SVG-Element nicht verfügbar");
+      return;
+    }
 
-  const svgElement = svgRef.nativeElement;
-  svgElement.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
-}
+    const svgElement = svgRef.nativeElement;
+    svgElement.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+  }
 
   onWheel(event: WheelEvent): void {
     if (!this.isInBrowser) return;
@@ -163,6 +187,10 @@ export class GraphComponent implements AfterViewInit {
 
     const newXScale = this.dataservice.xScale();
     const newYScale = this.dataservice.yScale();
+
+    if (!this.hasZoomed) {
+      this.hasZoomed = true;
+    }
 
     this.currentTransform = zoomIdentity
       .scale((newX1 - newX0) / (x1 - x0))
@@ -253,16 +281,15 @@ export class GraphComponent implements AfterViewInit {
   }
 
   onKeyDown(event: KeyboardEvent) {
-    console.log('Key pressed:', event.key);
-  if (event.key === 'Backspace') {
-    const y = this.hoveredGuide();
-    if (y !== null) {
-      this.fixedGuides.update(lines => lines.filter(val => val !== y));
-      this.hoveredGuide.set(null);
+    if (event.key === 'Backspace') {
+      const y = this.hoveredGuide();
+      if (y !== null) {
+        this.fixedGuides.update(lines => lines.filter(val => val !== y));
+        this.hoveredGuide.set(null);
+      }
+      event.preventDefault();
     }
-    event.preventDefault();
   }
-}
 
   onRightClick(event: MouseEvent) {
     event.preventDefault();
@@ -302,25 +329,25 @@ export class GraphComponent implements AfterViewInit {
     const textNode = textElement.node();
     const textWidth = textNode ? textNode.getComputedTextLength() : 100;
 
-    const rectWidth = textWidth + 30; 
+    const rectWidth = textWidth + 30;
     const rectHeight = 40;
-      
+
     group
-      .insert('rect', 'text') 
+      .insert('rect', 'text')
       .attr('width', rectWidth)
       .attr('height', rectHeight)
-      .attr('fill', 'rgba(255, 255, 204, 0.9)') 
+      .attr('fill', 'rgba(255, 255, 204, 0.9)')
       .attr('stroke', '#ccc')
       .attr('stroke-width', 1)
       .attr('rx', 8)
       .attr('ry', 8)
       .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))');
-    
+
     group.select('text')
       .attr('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
       .attr('font-weight', '500')
-      .attr('fill', '#333');  
-    
+      .attr('fill', '#333');
+
     group
       .append('text')
       .attr('x', rectWidth - 15)
@@ -337,7 +364,7 @@ export class GraphComponent implements AfterViewInit {
       })
       .on('click', function () {
         group.remove();
-    });
+      });
   }
 
   submitComment() {
@@ -378,21 +405,6 @@ export class GraphComponent implements AfterViewInit {
     container.selectAll("line.fixed").remove();
     container.selectAll("text.fixed").remove();
 
-    // Horizontale Linien
-    // container
-    //   .selectAll("line.fixed-h")
-    //   .data(visibleYGuides)
-    //   .join("line")
-    //   .attr("class", "fixed fixed-h")
-    //   .attr("stroke", "red")
-    //   .attr("stroke-width", 1)
-    //   .attr("stroke-dasharray", "2,2")
-    //   .attr("pointer-events", "none")
-    //   .attr("x1", 0)
-    //   .attr("x2", "100%")
-    //   .attr("y1", d => yaxis(d))
-    //   .attr("y2", d => yaxis(d));
-
     container
       .selectAll("text.fixed-h")
       .data(visibleYGuides)
@@ -430,7 +442,6 @@ export class GraphComponent implements AfterViewInit {
     //   .attr("font-size", "12px")
     //   .text(d => new Date(d).toLocaleTimeString());
   }
-
 
   marginTransform = computed(() => {
     return `translate(${this.dataservice.margin.left}, ${this.dataservice.margin.top})`;
@@ -493,4 +504,77 @@ export class GraphComponent implements AfterViewInit {
     this.drawFixedLines();
   });
 
+  resetZoom() {
+    console.log("Reset Zoom aufgerufen");
+    this.dataservice.resetZoom();
+    this.hasZoomed = false;
+  }
+
+  minimapWidth = 210;
+  minimapHeight = 140;
+  fullWidth = window.screen.availWidth;
+  fullHeight = window.screen.availHeight;
+
+  minimapTransform = computed(() => {
+    const scaleX = this.minimapWidth / this.fullWidth;
+    const scaleY = this.minimapHeight / this.fullHeight;
+
+    const xTranslate = this.dataservice.margin.left * scaleX;
+    const yTranslate = this.dataservice.margin.top * scaleY;
+
+    return `translate(${xTranslate}, ${yTranslate})`;
+  })
+
+  get viewRectX() {
+    return this.minimapXScale(this.currentViewBox().x);
+  }
+
+  get viewRectY() {
+    return this.minimapYScale(this.currentViewBox().y);
+  }
+
+  get viewRectWidth() {
+    return this.minimapXScale(this.currentViewBox().width) - this.minimapXScale(0);
+  }
+
+  get viewRectHeight() {
+    return this.minimapYScale(this.currentViewBox().height) - this.minimapYScale(0);
+  }
+
+  onMiniMapClick(event: MouseEvent) {
+    const svg = (event.target as SVGElement).closest('svg');
+    if (!svg) return;
+
+    const bounds = svg.getBoundingClientRect();
+    const relX = event.clientX - bounds.left;
+    const relY = event.clientY - bounds.top;
+
+    const scaleX = this.fullWidth / this.minimapWidth;
+    const scaleY = this.fullHeight / this.minimapHeight;
+
+    const newCenterX = relX * scaleX;
+    const newCenterY = relY * scaleY;
+
+    this.setViewportAround(newCenterX, newCenterY);
+  }
+
+  setViewportAround(centerX: number, centerY: number) {
+    const view = this.currentViewBox();
+
+    const viewWidth = view.width;
+    const viewHeight = view.height;
+
+    let newX = centerX - viewWidth / 2;
+    let newY = centerY - viewHeight / 2;
+
+    newX = Math.max(0, Math.min(newX, this.fullWidth - viewWidth));
+    newY = Math.max(0, Math.min(newY, this.fullHeight - viewHeight));
+
+    this.currentViewBox.set({
+      x: newX,
+      y: newY,
+      width: viewWidth,
+      height: viewHeight
+    });
+  }
 }

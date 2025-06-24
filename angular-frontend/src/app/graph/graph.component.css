@@ -1,4 +1,4 @@
-svg {
+svg.main-graph {
     min-width: 400px;
     min-height: 300px;
     width: 100%;
@@ -50,4 +50,31 @@ svg:focus, svg:focus-visible {outline:none}
     border: 1px solid #ccc;
     background-color: #eee;
     cursor: pointer;
+}
+
+.minimap-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 1px solid #aaa;
+  background-color: white;
+  opacity: 0.8;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.viewport-rect {
+  fill: none;
+  stroke: none;
+  stroke-width: 1;
+}
+
+.Expand {
+  margin-top: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  cursor: pointer;
 }
