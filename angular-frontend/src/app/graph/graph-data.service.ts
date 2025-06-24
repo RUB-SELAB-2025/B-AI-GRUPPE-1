@@ -1,8 +1,17 @@
-import { computed, effect, inject, Injectable, linkedSignal, signal, untracked } from '@angular/core';
-import { scaleLinear as d3ScaleLinear, scaleUtc as d3ScaleUtc } from 'd3-scale';
+import {
+  computed,
+  effect,
+  inject,
+  Injectable,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
+import {
+  scaleLinear as d3ScaleLinear,
+  scaleUtc as d3ScaleUtc,
+} from 'd3-scale';
 import { line as d3Line } from 'd3-shape';
-import {  OmnAIScopeDataService } from '../omnai-datasource/omnai-scope-server/live-data.service';
-import { type GraphComponent } from './graph.component';
 import { DataSourceSelectionService } from '../source-selection/data-source-selection.service';
 
 type UnwrapSignal<T> = T extends import('@angular/core').Signal<infer U> ? U : never;
@@ -10,106 +19,262 @@ type UnwrapSignal<T> = T extends import('@angular/core').Signal<infer U> ? U : n
 /**
  * Provide the data to be displayed in the {@link GraphComponent}
  */
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class DataSourceService {
   private readonly $graphDimensions = signal({ width: 800, height: 600 });
-  private readonly $xDomain = signal([new Date(2020), new Date()]);
-  private readonly $yDomain = signal([0, 100]);
+  private readonly $xDomain = signal<[Date, Date]>([new Date(2020), new Date()]);
+  private readonly $yDomain = signal<[number, number]>([0, 100]);
   private readonly dataSourceSelectionService = inject(DataSourceSelectionService);
+  private readonly $isZoomed = signal(false);
+  private readonly $xDomainMinimap = signal<[Date, Date]>([new Date(2020), new Date()]);
+  private readonly $yDomainMinimap = signal<[number, number]>([0, 100]);
 
-  private readonly dummySeries = computed(() => {
-    const selectedSource = this.dataSourceSelectionService.currentSource();
-    if (!selectedSource) return {};
+  readonly updateMinimapDomainsWhenDataChanges = effect(() => {
+  const data = this.dummySeries();
 
-    return selectedSource.data();
-  });
+  const [xMin, xMax] = this.$xDomainMinimap();
+  const [yMin, yMax] = this.$yDomainMinimap();
+  const isInitialX = xMin.getTime() === new Date(2020).getTime() && xMax.getTime() === new Date().getTime();
+  const isInitialY = yMin === 0 && yMax === 100;
+
+  if (isInitialX && isInitialY) {
+    this.scaleAxisToDataMinimap(data);
+  }
+});
+
+readonly zoomWindowInMinimap = computed(() => {
+  const [mainX0, mainX1] = this.$xDomain();
+  const [mainY0, mainY1] = this.$yDomain();
+  const [miniX0, miniX1] = this.$xDomainMinimap();
+  const [miniY0, miniY1] = this.$yDomainMinimap();
+
+  const xScaleMini = this.xScaleMinimap();
+  const yScaleMini = this.yScaleMinimap();
+
+  const xStart = xScaleMini(mainX0);
+  const xEnd = xScaleMini(mainX1);
+  const yStart = yScaleMini(mainY1); 
+  const yEnd = yScaleMini(mainY0);
+
+  return {
+    x: xStart,
+    y: yStart,
+    width: xEnd - xStart,
+    height: yEnd - yStart,
+  };
+});
 
 
   readonly margin = { top: 20, right: 30, bottom: 40, left: 60 };
   graphDimensions = this.$graphDimensions.asReadonly();
 
-  xScale = linkedSignal({
+  private readonly dummySeries = computed(() => {
+    const selectedSource = this.dataSourceSelectionService.currentSource();
+    if (!selectedSource) return {};
+    return selectedSource.data();
+  });
+
+  innerWidth() {
+    const dim = this.graphDimensions();
+    return dim.width - this.margin.left - this.margin.right;
+  }
+
+  innerHeight() {
+    const dim = this.graphDimensions();
+    return dim.height - this.margin.top - this.margin.bottom;
+  }
+
+  readonly xScale = linkedSignal({
     source: () => ({
       dimensions: this.$graphDimensions(),
       xDomain: this.$xDomain(),
     }),
     computation: ({ dimensions, xDomain }) => {
-      const margin = { top: 20, right: 30, bottom: 40, left: 40 };
-      const width = dimensions.width - margin.left - margin.right;
-      return d3ScaleUtc()
-        .domain(xDomain)
-        .range([0, width]);
+      const { left, right } = this.margin;
+      const width = dimensions.width - left - right;
+      return d3ScaleUtc().domain(xDomain).range([0, width]);
     },
   });
 
-  yScale = linkedSignal({
+  readonly yScale = linkedSignal({
     source: () => ({
       dimensions: this.$graphDimensions(),
       yDomain: this.$yDomain(),
     }),
     computation: ({ dimensions, yDomain }) => {
-      const margin = { top: 20, right: 30, bottom: 40, left: 40 };
-      const height = dimensions.height - margin.top - margin.bottom;
-      return d3ScaleLinear()
-        .domain(yDomain)
-        .range([height, 0]);
+      const { top, bottom } = this.margin;
+      const height = dimensions.height - top - bottom;
+      return d3ScaleLinear().domain(yDomain).range([height, 0]);
     },
   });
 
+  setZoomed(isZoomed: boolean) {
+    this.$isZoomed.set(isZoomed);
+  }
+
+  setDomains(
+    newX: [Date, Date],
+    newY: [number, number]
+  ): void {
+    this.$xDomain.set(newX);
+    this.$yDomain.set(newY);
+    this.setZoomed(true);
+  }
+
   updateGraphDimensions(settings: { width: number; height: number }) {
-    const currentSettings = this.$graphDimensions();
-    if (
-      currentSettings.width !== settings.width ||
-      currentSettings.height !== settings.height
-    ) {
-      this.$graphDimensions.set({ width: settings.width, height: settings.height });
+    const current = this.$graphDimensions();
+    if (current.width !== settings.width || current.height !== settings.height) {
+      this.$graphDimensions.set(settings);
     }
   }
 
- updateScalesWhenDataChanges = effect(() => {
+  readonly updateScalesWhenDataChanges = effect(() => {
     const data = this.dummySeries();
-    untracked(() => this.scaleAxisToData(data))
-  })
+    if (this.$isZoomed()) return;
+
+    untracked(() => this.scaleAxisToData(data));
+  });
 
   private scaleAxisToData(data: UnwrapSignal<typeof this.dummySeries>) {
-    console.log(data)
     if (Object.keys(data).length === 0) return;
 
     const expandBy = 0.1;
-
     const initial = {
       minTimestamp: Number.POSITIVE_INFINITY,
       maxTimestamp: Number.NEGATIVE_INFINITY,
       minValue: Number.POSITIVE_INFINITY,
-      maxValue: Number.NEGATIVE_INFINITY
+      maxValue: Number.NEGATIVE_INFINITY,
     };
 
-    const allPoints = Object.values(data).flat(); // DataFormat[]
+    const allPoints = Object.values(data).flat();
 
-    const result = allPoints.reduce((acc, point) => ({
-      minTimestamp: Math.min(acc.minTimestamp, point.timestamp),
-      maxTimestamp: Math.max(acc.maxTimestamp, point.timestamp),
-      minValue: Math.min(acc.minValue, point.value),
-      maxValue: Math.max(acc.maxValue, point.value),
-    }), initial);
+    const result = allPoints.reduce(
+      (acc, point) => ({
+        minTimestamp: Math.min(acc.minTimestamp, point.timestamp),
+        maxTimestamp: Math.max(acc.maxTimestamp, point.timestamp),
+        minValue: Math.min(acc.minValue, point.value),
+        maxValue: Math.max(acc.maxValue, point.value),
+      }),
+      initial
+    );
 
     if (!isFinite(result.minTimestamp) || !isFinite(result.minValue)) return;
 
     const xDomainRange = result.maxTimestamp - result.minTimestamp;
     const xExpansion = xDomainRange * expandBy;
 
+    const yDomainRange = result.maxValue - result.minValue;
+    const yExpansion = yDomainRange * expandBy;
+
     this.$xDomain.set([
       new Date(result.minTimestamp - xExpansion),
       new Date(result.maxTimestamp + xExpansion),
     ]);
 
-    const yDomainRange = result.maxValue - result.minValue;
-    const yExpansion = yDomainRange * expandBy;
-
     this.$yDomain.set([
       result.minValue - yExpansion,
       result.maxValue + yExpansion,
     ]);
+  }
+
+  private scaleAxisToDataMinimap(data: UnwrapSignal<typeof this.dummySeries>) {
+  if (Object.keys(data).length === 0) return;
+
+  const expandBy = 0.1;
+  const initial = {
+    minTimestamp: Number.POSITIVE_INFINITY,
+    maxTimestamp: Number.NEGATIVE_INFINITY,
+    minValue: Number.POSITIVE_INFINITY,
+    maxValue: Number.NEGATIVE_INFINITY,
+  };
+
+  const allPoints = Object.values(data).flat();
+
+  const result = allPoints.reduce(
+    (acc, point) => ({
+      minTimestamp: Math.min(acc.minTimestamp, point.timestamp),
+      maxTimestamp: Math.max(acc.maxTimestamp, point.timestamp),
+      minValue: Math.min(acc.minValue, point.value),
+      maxValue: Math.max(acc.maxValue, point.value),
+    }),
+    initial
+  );
+
+  if (!isFinite(result.minTimestamp) || !isFinite(result.minValue)) return;
+
+  const xDomainRange = result.maxTimestamp - result.minTimestamp;
+  const xExpansion = xDomainRange * expandBy;
+
+  const yDomainRange = result.maxValue - result.minValue;
+  const yExpansion = yDomainRange * expandBy;
+
+  this.$xDomainMinimap.set([
+    new Date(result.minTimestamp - xExpansion),
+    new Date(result.maxTimestamp + xExpansion),
+  ]);
+
+  this.$yDomainMinimap.set([
+    result.minValue - yExpansion,
+    result.maxValue + yExpansion,
+  ]);
+}
+
+  readonly xScaleMinimap = linkedSignal({
+  source: () => ({
+    dimensions: this.$graphDimensions(),
+    xDomain: this.$xDomainMinimap(),
+  }),
+  computation: ({ dimensions, xDomain }) => {
+    const { left, right } = this.margin;
+    const width = dimensions.width - left - right;
+    return d3ScaleUtc().domain(xDomain).range([0, width]);
+  },
+});
+
+readonly yScaleMinimap = linkedSignal({
+  source: () => ({
+    dimensions: this.$graphDimensions(),
+    yDomain: this.$yDomainMinimap(),
+  }),
+  computation: ({ dimensions, yDomain }) => {
+    const { top, bottom } = this.margin;
+    const height = dimensions.height - top - bottom;
+    return d3ScaleLinear().domain(yDomain).range([height, 0]);
+  },
+});
+
+readonly pathsMinimap = linkedSignal({
+  source: () => ({
+    xScale: this.xScaleMinimap(),
+    yScale: this.yScaleMinimap(),
+    series: this.dummySeries(),
+  }),
+  computation: ({ xScale, yScale, series }) => {
+    const lineGen = d3Line<{ time: Date; value: number }>()
+      .x((d) => xScale(d.time))
+      .y((d) => yScale(d.value));
+
+    return Object.entries(series).map(([key, points]) => {
+      const parsedValues = points.map(({ timestamp, value }) => ({
+        time: new Date(timestamp),
+        value,
+      }));
+
+      const pathData = lineGen(parsedValues) ?? '';
+      return {
+        id: key,
+        d: pathData,
+      };
+    });
+  },
+});
+
+  // Methode um Zoom zurückzusetzen, schauen wir mal wie das benutzt wird
+  resetZoom() {
+    this.$isZoomed.set(false);
+    this.scaleAxisToData(this.dummySeries());
   }
 
   readonly paths = linkedSignal({
@@ -120,8 +285,8 @@ export class DataSourceService {
     }),
     computation: ({ xScale, yScale, series }) => {
       const lineGen = d3Line<{ time: Date; value: number }>()
-        .x(d => xScale(d.time))
-        .y(d => yScale(d.value));
+        .x((d) => xScale(d.time))
+        .y((d) => yScale(d.value));
 
       return Object.entries(series).map(([key, points]) => {
         const parsedValues = points.map(({ timestamp, value }) => ({
@@ -129,7 +294,7 @@ export class DataSourceService {
           value,
         }));
 
-        const pathData = lineGen(parsedValues) ?? ''; 
+        const pathData = lineGen(parsedValues) ?? '';
         return {
           id: key,
           d: pathData,
