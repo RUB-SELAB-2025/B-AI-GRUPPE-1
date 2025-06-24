@@ -142,54 +142,280 @@ export class GraphComponent {
             d3.select(this).attr('transform', `translate(${event.x},${event.y})`);
           })
       );
+    
+    group.on('click', function (event) {
+      event.stopPropagation();
+    });
+      
+    const tempText = group
+      .append('text')
+      .attr('class', 'comment-text')
+      .attr('x', 10)
+      .attr('y', 25)
+      .attr('font-size', '14px')
+      .attr('fill', '#333')
+      .attr('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
+      .attr('font-weight', '500')
+      .attr('dominant-baseline', 'hanging')
+      .attr('text-anchor', 'start')
+      .text(text)
+      .call(wrapText, 160);
+
+    const tspans = tempText.selectAll('tspan').nodes();
+    const lineCount = tspans.length;
+    const lineHeightPx = 18; 
+    const verticalPadding = 25;
+    const rectHeight = lineCount * lineHeightPx + verticalPadding;
+    const rectWidth = 180;
+
+    tempText.remove(); 
 
     const textElement = group
       .append('text')
+      .attr('class', 'comment-text')
+      .attr('data-full-text', text)
       .attr('x', 10)
-      .attr('y', 25)
-      .text(text)
+      .attr('y', 22)
       .attr('font-size', '14px')
-      .attr('fill', '#333');
+      .attr('fill', '#222')
+      .attr('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
+      .attr('font-weight', '500')
+      .attr('dominant-baseline', 'hanging')
+      .attr('text-anchor', 'start');
 
-    const textNode = textElement.node();
-    const textWidth = textNode ? textNode.getComputedTextLength() : 100;
+    textElement.on('dblclick', function (event) {
+       event.stopPropagation();
+       const textEl = d3.select(this);
+       const currentText = textEl.attr('data-full-text') || textEl.text();
+       const parent = d3.select<SVGGElement, unknown>(this.parentNode as SVGGElement);
+       const rect = parent.select('rect');
+       const width = parseFloat(rect.attr('width')) - 20;
+       const height = parseFloat(rect.attr('height'));
 
-    const rectWidth = textWidth + 30; 
-    const rectHeight = 40;
+       textEl.style('display', 'none');
+
+       const fo = parent.append('foreignObject')
+         .attr('x', 10)
+         .attr('y', 10)
+         .attr('width', width)
+         .attr('height', height - 20);
+
+       const foBody = fo.append('xhtml:div')
+         .style('width', '100%')
+         .style('height', '100%');
+
+       const textarea = foBody.append('textarea')
+         .style('width', '100%')
+         .style('height', '100%')
+         .style('font-size', '14px')
+         .style('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
+         .style('box-sizing', 'border-box')
+         .text(currentText)
+         .on('blur', function () {
+            const newText = (this as HTMLTextAreaElement).value;
+            textEl
+              .text(newText)
+              .attr('data-full-text', newText)
+              .style('display', null);
+          
+            fo.remove();
+          
+            const padding = 20;
+            const newWidth = parseFloat(rect.attr('width')) - padding;
+          
+            wrapText(textEl, newWidth);
+          
+            const tspans = textEl.selectAll('tspan').nodes();
+            const lineCount = tspans.length;
+            const lineHeight = 18;
+            const verticalPadding = 25;
+            const newHeight = lineCount * lineHeight + verticalPadding;
+          
+            rect.attr('height', newHeight);
+          
+            parent.select<SVGTextElement>('.resize-handle')
+              .attr('y', newHeight - 6);
+          
+            parent.select<SVGTextElement>('.coord-text')
+              .attr('y', newHeight - 6);
+          })
+         .on('keydown', function (event) {
+           if (event.key === 'Enter' && !event.shiftKey) {
+             event.preventDefault();
+             (this as HTMLTextAreaElement).blur();
+           }
+         });
+
+       textarea.node()?.focus();
+    });  
+
+    requestAnimationFrame(() => {
+      textElement.text(text); 
+      wrapText(textElement, rectWidth - 20);
+    });
       
     group
       .insert('rect', 'text') 
       .attr('width', rectWidth)
       .attr('height', rectHeight)
-      .attr('fill', 'rgba(255, 255, 204, 0.9)') 
-      .attr('stroke', '#ccc')
-      .attr('stroke-width', 1)
+      .attr('fill', '#fff') 
+      .attr('stroke', '#c8c8c8')
+      .attr('stroke-width', 1.2)
       .attr('rx', 8)
       .attr('ry', 8)
-      .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))');
+      .style('filter', 'drop-shadow(0 1px 3px rgba(0,0,0,0.15))');
     
     group.select('text')
       .attr('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
       .attr('font-weight', '500')
       .attr('fill', '#333');  
     
-    group
+    const closeButton = group
       .append('text')
-      .attr('x', rectWidth - 15)
-      .attr('y', 15)
+      .attr('class', 'close-button')
+      .attr('x', rectWidth - 16)
+      .attr('y', 14)
       .text('✖')
       .attr('font-size', '16px')
-      .attr('fill', '#900')
+      .attr('fill', '#999')
       .attr('cursor', 'pointer')
       .on('mouseover', function () {
-        d3.select(this).attr('fill', '#f44336');
+        d3.select(this).attr('fill', '#333');
       })
       .on('mouseout', function () {
-        d3.select(this).attr('fill', '#900');
+        d3.select(this).attr('fill', '#999');
       })
       .on('click', function () {
         group.remove();
-    });
+      });
+
+    const minimizeButton = group.append('text')
+      .attr('class', 'minimize-button')
+      .attr('x', rectWidth - 32)
+      .attr('y', 14)
+      .text('−')
+      .attr('font-size', '16px')
+      .attr('fill', '#555')
+      .attr('cursor', 'pointer')
+      .on('mouseover', function () {
+        d3.select(this).attr('fill', '#000');
+      })
+      .on('mouseout', function () {
+        d3.select(this).attr('fill', '#555');
+      })
+      .on('click', function (event) {
+        event.stopPropagation();
+        group.attr('data-minimized', 'true');
+        group.selectAll('text.comment-text,.close-button,.resize-handle,.minimize-button, rect').style('display', 'none');
+        group.append('text')
+          .attr('class', 'restore-button')
+          .attr('x', rectWidth / 2 - 5)
+          .attr('y', 20)
+          .text('+')
+          .attr('font-size', '20px')
+          .attr('fill', '#007BFF')
+          .attr('cursor', 'pointer')
+          .on('click', function (event) {
+            event.stopPropagation();
+            group.attr('data-minimized', 'false');
+            group.selectAll('text.comment-text,.close-button,.resize-handle,.minimize-button, rect').style('display', null);
+            group.select('.restore-button').remove();
+          });
+      });
+
+    const resizeHandle = group
+      .append('text')
+      .attr('class', 'resize-handle')
+      .attr('x', rectWidth - 16)
+      .attr('y', rectHeight - 6)
+      .text('⤡')
+      .attr('font-size', '14px')
+      .attr('fill', '#666')
+      .attr('cursor', 'nwse-resize')
+      .on('mouseover', function () {
+        d3.select(this).attr('fill', '#000');
+      })
+      .on('mouseout', function () {
+        d3.select(this).attr('fill', '#666');
+      })
+      .call(
+        d3.drag<SVGTextElement, unknown>()
+          .on('drag', function (event) {
+            const minPadding = 20;
+
+            const text = group.select<SVGTextElement>('.comment-text');
+            const originalText = text.attr('data-full-text');
+
+            const testText = text.clone(true)
+              .style('visibility', 'hidden')
+              .style('pointer-events', 'none')
+              .text(originalText)
+              .call(wrapText, event.x - minPadding);
+
+            const bbox = testText.node()?.getBBox();
+            const requiredWidth = (bbox?.width ?? 60) + minPadding;
+            const requiredHeight = (bbox?.height ?? 30) + verticalPadding;
+            testText.remove();
+
+            const newWidth = Math.max(60, event.x, requiredWidth);
+            const newHeight = Math.max(30, event.y, requiredHeight);
+
+            group.select('rect')
+              .attr('width', newWidth)
+              .attr('height', newHeight);
+
+            group.select('.resize-handle')
+              .attr('x', newWidth - 16)
+              .attr('y', newHeight - 6);
+
+            group.select('.close-button')
+              .attr('x', newWidth - 16);
+
+            group.select('.minimize-button')
+              .attr('x', newWidth - 32);
+
+            text.text(originalText);
+            wrapText(text, newWidth - minPadding);
+
+            group.select('.coord-text')
+              .attr('y', newHeight - 6);
+          })
+      );
+
+    function wrapText(textSelection: d3.Selection<SVGTextElement, unknown, null, undefined>, width: number) {
+      textSelection.each(function () {
+        const text = d3.select(this);
+        const words = text.text().split(/\s+/).reverse();
+        let word: string;
+        let line: string[] = [];
+        let lineNumber = 0;
+        const lineHeight = 1.2; 
+        const x = text.attr('x');
+        const y = text.attr('y');
+        const dy = 0;
+        let tspan = text.text(null)
+          .append('tspan')
+          .attr('x', x)
+          .attr('y', y)
+          .attr('dy', `${dy}em`)
+          .text('');
+      
+        while ((word = words.pop()!)) {
+          line.push(word);
+          tspan.text(line.join(' '));
+          if (tspan.node()!.getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(' '));
+            line = [word];
+            tspan = text.append('tspan')
+              .attr('x', x)
+              .attr('y', y)
+              .attr('dy', `${++lineNumber * lineHeight}em`)
+              .text(word);
+          }
+        }
+      });
+    }
   }
 
   submitComment() {
