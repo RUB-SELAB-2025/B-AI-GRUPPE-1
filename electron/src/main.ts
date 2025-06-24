@@ -40,17 +40,27 @@ const createWindow = (): void => {
   mainWindow.loadFile(indexPath).catch(err => console.error("Fehler beim Laden der HTML-Datei:", err));
 };
 
-const menuScope = [
+let pwmIsActive = false;
+
+const menuScope: Electron.MenuItemConstructorOptions[] = [
   {
     label: 'File',
     submenu: [
       {
         label: 'Import',
-        click: async () => {console.log("Clicked File:Import")}
+        click() {
+          (async () => {
+            console.log("Clicked File:Import");
+          })();
+        }
       },
       {
         label: 'Export',
-        click: async () => {console.log("Clicked File:Export")}
+        click() {
+          (async () => {
+            console.log("Clicked File:Export");
+          })();
+        }
       },
       {
         label: 'Close',
@@ -61,45 +71,140 @@ const menuScope = [
       }
     ]
   },
+  {
+    label: 'Analysis',
+    submenu: [
+      {
+        label: 'Minimum',
+        click() {
+          (async () => {
+            console.log("Clicked Analysis:Minimum");
+          })();
+        }
+      },
+      {
+        label: 'Maximum',
+        click() {
+          (async () => {
+            console.log("Clicked Analysis:Maximum");
+          })();
+        }
+      },
+      {
+        label: 'Median',
+        type: 'checkbox',
+        checked: false,
+        click(menuItem: Electron.MenuItem) {
+          if (mainWindow) {
+            mainWindow.webContents.toggleDevTools();
+          }
+          console.log('Median checked state:', menuItem.checked);
+        }
+      },
+      {
+        label: 'PWM',
+        type: 'checkbox',
+        checked: false,
+        click: async (menuItem: Electron.MenuItem) => {
+          try {
+            if (pwmIsActive) {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
 
-    {
-  label: 'Analysis',
-  submenu: [
-    {
-      label: 'Minimum',
-      click: async () => {console.log("Clicked Analysis:Minimum")}
-    },
-    {
-      label: 'Maximum',
-      click: async () => {console.log("Clicked Analysis:Maximum")}
-    },
-    {
-      label: 'Median',
-      click: async () => {console.log("Clicked Analysis:Median")}
-    },
-    {
-      label: 'PWM',
-      click: async () => {console.log("Clicked Analysis:PWM")}
-    }
-  ]
-},
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `PWM Analyse wurde erfolgreich deaktiviert!`,
+                  buttons: ['OK']
+                });
+                pwmIsActive = false;
+                menuItem.checked = false;
+              }
+            } else {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/PWM");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `PWM Analyse wurde erfolgreich aktiviert!`,
+                  buttons: ['OK']
+                });
+                pwmIsActive = true;
+                menuItem.checked = true;
+              }
+            }
+
+
+            //const data = await response.json();
+            //console.log(data);
+            //if (data.analyse?.toUpperCase() === 'OFF') {
+            //  dialog.showMessageBox(mainWindow, {
+            //    type: 'info',
+            //    title: 'Information',
+            //    message: `IST OFF`,
+            //    buttons: ['OK']
+            //  });
+            //  menuItem.checked = true;
+            //  if (mainWindow) mainWindow.webContents.send('status-ok');
+            //} else {
+            //  console.log('Status ist nicht OK');
+            //  menuItem.checked = false;
+            //  if (mainWindow) mainWindow.webContents.send('status-not-ok');
+            //}
+          } catch (error: any) {
+            console.error('Fehler beim HTTP-Request:', error);
+            menuItem.checked = false;
+            if (mainWindow) mainWindow.webContents.send('status-error', error.message);
+          }
+        }
+      }
+    ]
+  },
   {
     label: 'Help',
-    submenu: [{
-      label: 'Information',
-      click: async () => {
-        dialog.showMessageBox(mainWindow, {
-          type: 'info',
-          title: 'Information',
-          message: `electron-v.${versionInfo.electronVersion}\nangular-v.${versionInfo.angularVersion}\n${versionInfo.generatedAt}\n\nMIT © ${new Date().getFullYear()} AI-Gruppe`,
-          buttons: ['OK']
-        })
-      }
-    },
+    submenu: [
+      {
+        label: 'Information',
+        click() {
+          (async () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'Information',
+              message: `electron-v.${versionInfo.electronVersion}\nangular-v.${versionInfo.angularVersion}\n${versionInfo.generatedAt}\n\nMIT © ${new Date().getFullYear()} AI-Gruppe`,
+              buttons: ['OK']
+            });
+          })();
+        }
+      },
       {
         label: 'Support-Website',
-        click: async () => {
-          shell.openExternal("https://omnaiscope.auto-intern.de/support/")
+        click() {
+          (async () => {
+            shell.openExternal("https://omnaiscope.auto-intern.de/support/");
+          })();
         }
       },
       {
@@ -117,6 +222,7 @@ const menuScope = [
 
 const menu = Menu.buildFromTemplate(menuScope);
 Menu.setApplicationMenu(menu);
+
 
 omnaiscopeBackendManager.startBackend();
 
