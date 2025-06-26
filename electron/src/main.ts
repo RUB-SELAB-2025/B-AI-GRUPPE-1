@@ -141,7 +141,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
 
             if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !medianIsActive) {
               dialog.showMessageBox(mainWindow, {
-                type: 'info',
+                type: 'error',
                 title: 'Analyse bereits aktiv',
                 message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
                 buttons: ['OK']
@@ -235,7 +235,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
 
             if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !avgIsActive) {
               dialog.showMessageBox(mainWindow, {
-                type: 'info',
+                type: 'error',
                 title: 'Analyse bereits aktiv',
                 message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
                 buttons: ['OK']
@@ -329,7 +329,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
 
             if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !frequenzIsActive) {
               dialog.showMessageBox(mainWindow, {
-                type: 'info',
+                type: 'error',
                 title: 'Analyse bereits aktiv',
                 message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
                 buttons: ['OK']
@@ -423,7 +423,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
 
             if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !smoothIsActive) {
               dialog.showMessageBox(mainWindow, {
-                type: 'info',
+                type: 'error',
                 title: 'Analyse bereits aktiv',
                 message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
                 buttons: ['OK']
@@ -517,7 +517,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
 
             if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !pwmIsActive) {
               dialog.showMessageBox(mainWindow, {
-                type: 'info',
+                type: 'error',
                 title: 'Analyse bereits aktiv',
                 message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
                 buttons: ['OK']
