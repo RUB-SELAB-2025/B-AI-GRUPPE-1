@@ -142,7 +142,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'Maximum-Wert',
-              message: `Der kleinste aktuelle Wert ist ${data.maxValue}`,
+              message: `Der größte aktuelle Wert ist ${data.maxValue}`,
               buttons: ['OK']
             });
 
