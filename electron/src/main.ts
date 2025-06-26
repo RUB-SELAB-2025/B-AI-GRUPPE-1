@@ -42,6 +42,10 @@ const createWindow = (): void => {
 };
 
 let pwmIsActive = false;
+let medianIsActive = false;
+let avgIsActive = false;
+let frequenzIsActive = false;
+let smoothIsActive = false;
 
 const menuScope: Electron.MenuItemConstructorOptions[] = [
   {
@@ -77,29 +81,428 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
     submenu: [
       {
         label: 'Minimum',
-        click() {
-          (async () => {
-            console.log("Clicked Analysis:Minimum");
-          })();
+        click: async () => {
+          const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/MIN");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+              const data = await response.json();
+              console.log(data);
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Minimum-Wert',
+                  message: `Der kleinste aktuelle Wert ist ${data.minValue}`,
+                  buttons: ['OK']
+                });
         }
       },
       {
         label: 'Maximum',
-        click() {
-          (async () => {
-            console.log("Clicked Analysis:Maximum");
-          })();
+        click: async () => {
+          const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/MAX");
+          console.log(response);
+          console.log(response.status);
+          if (response.status != 200) {
+            dialog.showMessageBox(mainWindow, {
+              type: 'error',
+              title: 'HTTP Error',
+              message: `HTTP ${response.status}`,
+              buttons: ['OK']
+            });
+            return;
+          }
+          const data = await response.json();
+          console.log(data);
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Minimum-Wert',
+            message: `Der größte aktuelle Wert ist ${data.minValue}`,
+            buttons: ['OK']
+          });
         }
       },
       {
         label: 'Median',
         type: 'checkbox',
         checked: false,
-        click(menuItem: Electron.MenuItem) {
-          if (mainWindow) {
-            mainWindow.webContents.toggleDevTools();
+        click: async (menuItem: Electron.MenuItem) => {
+          try {
+            const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
+            const analysisStatus = await analysisValue.json();
+            console.log(analysisStatus.analyse);
+
+            if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !medianIsActive) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Analyse bereits aktiv',
+                message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
+                buttons: ['OK']
+              });
+              menuItem.checked = false;
+              return;
+            }
+            if (medianIsActive) {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `Median Analyse wurde erfolgreich deaktiviert!`,
+                  buttons: ['OK']
+                });
+                medianIsActive = false;
+                menuItem.checked = false;
+              }
+            } else {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/MEDIAN");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `Median Analyse wurde erfolgreich aktiviert!`,
+                  buttons: ['OK']
+                });
+                medianIsActive = true;
+                menuItem.checked = true;
+              }
+            }
+
+
+            //const data = await response.json();
+            //console.log(data);
+            //if (data.analyse?.toUpperCase() === 'OFF') {
+            //  dialog.showMessageBox(mainWindow, {
+            //    type: 'info',
+            //    title: 'Information',
+            //    message: `IST OFF`,
+            //    buttons: ['OK']
+            //  });
+            //  menuItem.checked = true;
+            //  if (mainWindow) mainWindow.webContents.send('status-ok');
+            //} else {
+            //  console.log('Status ist nicht OK');
+            //  menuItem.checked = false;
+            //  if (mainWindow) mainWindow.webContents.send('status-not-ok');
+            //}
+          } catch (error: any) {
+            console.error('Fehler beim HTTP-Request:', error);
+            menuItem.checked = false;
+            if (mainWindow) mainWindow.webContents.send('status-error', error.message);
           }
-          console.log('Median checked state:', menuItem.checked);
+        }
+      },
+      {
+        label: 'Average',
+        type: 'checkbox',
+        checked: false,
+        click: async (menuItem: Electron.MenuItem) => {
+          try {
+            const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
+            const analysisStatus = await analysisValue.json();
+            console.log(analysisStatus.analyse);
+
+            if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !avgIsActive) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Analyse bereits aktiv',
+                message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
+                buttons: ['OK']
+              });
+              menuItem.checked = false;
+              return;
+            }
+            if (avgIsActive) {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `AVERAGE Analyse wurde erfolgreich deaktiviert!`,
+                  buttons: ['OK']
+                });
+                avgIsActive = false;
+                menuItem.checked = false;
+              }
+            } else {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/AVG");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `AVERAGE Analyse wurde erfolgreich aktiviert!`,
+                  buttons: ['OK']
+                });
+                avgIsActive = true;
+                menuItem.checked = true;
+              }
+            }
+
+
+            //const data = await response.json();
+            //console.log(data);
+            //if (data.analyse?.toUpperCase() === 'OFF') {
+            //  dialog.showMessageBox(mainWindow, {
+            //    type: 'info',
+            //    title: 'Information',
+            //    message: `IST OFF`,
+            //    buttons: ['OK']
+            //  });
+            //  menuItem.checked = true;
+            //  if (mainWindow) mainWindow.webContents.send('status-ok');
+            //} else {
+            //  console.log('Status ist nicht OK');
+            //  menuItem.checked = false;
+            //  if (mainWindow) mainWindow.webContents.send('status-not-ok');
+            //}
+          } catch (error: any) {
+            console.error('Fehler beim HTTP-Request:', error);
+            menuItem.checked = false;
+            if (mainWindow) mainWindow.webContents.send('status-error', error.message);
+          }
+        }
+      },
+      {
+        label: 'Frequenz',
+        type: 'checkbox',
+        checked: false,
+        click: async (menuItem: Electron.MenuItem) => {
+          try {
+            const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
+            const analysisStatus = await analysisValue.json();
+            console.log(analysisStatus.analyse);
+
+            if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !frequenzIsActive) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Analyse bereits aktiv',
+                message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
+                buttons: ['OK']
+              });
+              menuItem.checked = false;
+              return;
+            }
+            if (frequenzIsActive) {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `FREQUENZ Analyse wurde erfolgreich deaktiviert!`,
+                  buttons: ['OK']
+                });
+                frequenzIsActive = false;
+                menuItem.checked = false;
+              }
+            } else {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/FREQUENZ");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `FREQUENZ Analyse wurde erfolgreich aktiviert!`,
+                  buttons: ['OK']
+                });
+                frequenzIsActive = true;
+                menuItem.checked = true;
+              }
+            }
+
+
+            //const data = await response.json();
+            //console.log(data);
+            //if (data.analyse?.toUpperCase() === 'OFF') {
+            //  dialog.showMessageBox(mainWindow, {
+            //    type: 'info',
+            //    title: 'Information',
+            //    message: `IST OFF`,
+            //    buttons: ['OK']
+            //  });
+            //  menuItem.checked = true;
+            //  if (mainWindow) mainWindow.webContents.send('status-ok');
+            //} else {
+            //  console.log('Status ist nicht OK');
+            //  menuItem.checked = false;
+            //  if (mainWindow) mainWindow.webContents.send('status-not-ok');
+            //}
+          } catch (error: any) {
+            console.error('Fehler beim HTTP-Request:', error);
+            menuItem.checked = false;
+            if (mainWindow) mainWindow.webContents.send('status-error', error.message);
+          }
+        }
+      },
+      {
+        label: 'Smooth',
+        type: 'checkbox',
+        checked: false,
+        click: async (menuItem: Electron.MenuItem) => {
+          try {
+            const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
+            const analysisStatus = await analysisValue.json();
+            console.log(analysisStatus.analyse);
+
+            if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !smoothIsActive) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Analyse bereits aktiv',
+                message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
+                buttons: ['OK']
+              });
+              menuItem.checked = false;
+              return;
+            }
+            if (smoothIsActive) {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `SMOOTH Analyse wurde erfolgreich deaktiviert!`,
+                  buttons: ['OK']
+                });
+                smoothIsActive = false;
+                menuItem.checked = false;
+              }
+            } else {
+              const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/SMOOTH");
+              console.log(response);
+              console.log(response.status);
+              if (response.status != 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'error',
+                  title: 'HTTP Error',
+                  message: `HTTP ${response.status}`,
+                  buttons: ['OK']
+                });
+                return;
+              }
+
+              if (response.status == 200) {
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Information',
+                  message: `SMOOTH Analyse wurde erfolgreich aktiviert!`,
+                  buttons: ['OK']
+                });
+                smoothIsActive = true;
+                menuItem.checked = true;
+              }
+            }
+
+
+            //const data = await response.json();
+            //console.log(data);
+            //if (data.analyse?.toUpperCase() === 'OFF') {
+            //  dialog.showMessageBox(mainWindow, {
+            //    type: 'info',
+            //    title: 'Information',
+            //    message: `IST OFF`,
+            //    buttons: ['OK']
+            //  });
+            //  menuItem.checked = true;
+            //  if (mainWindow) mainWindow.webContents.send('status-ok');
+            //} else {
+            //  console.log('Status ist nicht OK');
+            //  menuItem.checked = false;
+            //  if (mainWindow) mainWindow.webContents.send('status-not-ok');
+            //}
+          } catch (error: any) {
+            console.error('Fehler beim HTTP-Request:', error);
+            menuItem.checked = false;
+            if (mainWindow) mainWindow.webContents.send('status-error', error.message);
+          }
         }
       },
       {
@@ -108,6 +511,20 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
+            const analysisStatus = await analysisValue.json();
+            console.log(analysisStatus.analyse);
+
+            if (analysisStatus.analyse.trim().toUpperCase() !== 'OFF' && !pwmIsActive) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Analyse bereits aktiv',
+                message: 'Es ist bereits eine weitere Analyse aktiv. Deaktiviere diese zuerst.',
+                buttons: ['OK']
+              });
+              menuItem.checked = false;
+              return;
+            }
             if (pwmIsActive) {
               const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/OFF");
               console.log(response);
