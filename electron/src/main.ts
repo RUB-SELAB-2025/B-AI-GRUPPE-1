@@ -82,51 +82,79 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
       {
         label: 'Minimum',
         click: async () => {
-          const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/MIN");
-              console.log(response);
-              console.log(response.status);
-              if (response.status != 200) {
-                dialog.showMessageBox(mainWindow, {
-                  type: 'error',
-                  title: 'HTTP Error',
-                  message: `HTTP ${response.status}`,
-                  buttons: ['OK']
-                });
-                return;
-              }
-              const data = await response.json();
-              console.log(data);
-                dialog.showMessageBox(mainWindow, {
-                  type: 'info',
-                  title: 'Minimum-Wert',
-                  message: `Der kleinste aktuelle Wert ist ${data.minValue}`,
-                  buttons: ['OK']
-                });
+          try {
+            const response = await fetch('http://127.0.0.1:' + analysisBackendManager.getPort() + '/MIN');
+            console.log(response);
+            console.log(response.status);
+
+            if (response.status !== 200) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'error',
+                title: 'HTTP Error',
+                message: `HTTP ${response.status}`,
+                buttons: ['OK']
+              });
+              return;
+            }
+
+            const data = await response.json();
+            console.log(data);
+
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'Minimum-Wert',
+              message: `Der kleinste aktuelle Wert ist ${data.minValue}`,
+              buttons: ['OK']
+            });
+
+          } catch (error: any) {
+            console.error('Fehler beim Abrufen des Minimum-Werts:', error);
+            dialog.showMessageBox(mainWindow, {
+              type: 'error',
+              title: 'Netzwerkfehler',
+              message: `Fehler beim Verbinden mit dem Analyse-Server:\n${error.message}`,
+              buttons: ['OK']
+            });
+          }
         }
       },
       {
         label: 'Maximum',
         click: async () => {
-          const response = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/MAX");
-          console.log(response);
-          console.log(response.status);
-          if (response.status != 200) {
+          try {
+            const response = await fetch('http://127.0.0.1:' + analysisBackendManager.getPort() + '/MAX');
+            console.log(response);
+            console.log(response.status);
+
+            if (response.status !== 200) {
+              dialog.showMessageBox(mainWindow, {
+                type: 'error',
+                title: 'HTTP Error',
+                message: `HTTP ${response.status}`,
+                buttons: ['OK']
+              });
+              return;
+            }
+
+            const data = await response.json();
+            console.log(data);
+
             dialog.showMessageBox(mainWindow, {
-              type: 'error',
-              title: 'HTTP Error',
-              message: `HTTP ${response.status}`,
+              type: 'info',
+              title: 'Maximum-Wert',
+              message: `Der kleinste aktuelle Wert ist ${data.maxValue}`,
               buttons: ['OK']
             });
-            return;
+
+          } catch (error: any) {
+            console.error('Fehler beim Abrufen des Maximum-Werts:', error);
+            dialog.showMessageBox(mainWindow, {
+              type: 'error',
+              title: 'Netzwerkfehler',
+              message: `Fehler beim Verbinden mit dem Analyse-Server:\n${error.message}`,
+              buttons: ['OK']
+            });
           }
-          const data = await response.json();
-          console.log(data);
-          dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            title: 'Minimum-Wert',
-            message: `Der größte aktuelle Wert ist ${data.maxValue}`,
-            buttons: ['OK']
-          });
         }
       },
       {
