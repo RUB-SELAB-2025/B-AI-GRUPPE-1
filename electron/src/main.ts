@@ -83,6 +83,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         label: 'Minimum',
         click: async () => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const response = await fetch('http://127.0.0.1:' + analysisBackendManager.getPort() + '/MIN');
             console.log(response);
             console.log(response.status);
@@ -122,6 +123,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         label: 'Maximum',
         click: async () => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const response = await fetch('http://127.0.0.1:' + analysisBackendManager.getPort() + '/MAX');
             console.log(response);
             console.log(response.status);
@@ -163,6 +165,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
             const analysisStatus = await analysisValue.json();
             console.log(analysisStatus.analyse);
@@ -257,6 +260,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
             const analysisStatus = await analysisValue.json();
             console.log(analysisStatus.analyse);
@@ -351,6 +355,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
             const analysisStatus = await analysisValue.json();
             console.log(analysisStatus.analyse);
@@ -445,6 +450,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
             const analysisStatus = await analysisValue.json();
             console.log(analysisStatus.analyse);
@@ -539,6 +545,7 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
         checked: false,
         click: async (menuItem: Electron.MenuItem) => {
           try {
+            await new Promise(resolve => setTimeout(resolve, 3000));
             const analysisValue = await fetch('http://127.0.0.1:'+analysisBackendManager.getPort()+"/ANALYSE");
             const analysisStatus = await analysisValue.json();
             console.log(analysisStatus.analyse);
