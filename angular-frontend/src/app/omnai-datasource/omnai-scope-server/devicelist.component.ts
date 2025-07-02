@@ -10,8 +10,10 @@ import { OmnAIScopeDataService } from './live-data.service';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeviceListComponent {
-    readonly #deviceHandler = inject(OmnAIScopeDataService);
-    devices = this.#deviceHandler.devices
+  readonly #deviceHandler = inject(OmnAIScopeDataService);
+  devices = this.#deviceHandler.devices
+  isConnected = this.#deviceHandler.isConnected
 
-    getDevicesList = this.#deviceHandler.getDevices.bind(this.#deviceHandler)
+  getDevicesList = this.#deviceHandler.getDevices.bind(this.#deviceHandler)
+  disconnectWebsocket = this.#deviceHandler.disconnect.bind(this.#deviceHandler)
 }
