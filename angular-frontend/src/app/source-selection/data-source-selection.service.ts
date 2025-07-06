@@ -30,6 +30,7 @@ export class DataSourceSelectionService {
     private readonly dummyDataService = inject(DummyDataService);
     private readonly csvDataService = inject(CsvFileImportService);
     private readonly _currentSource = signal<DataSourceInfo | null>(null);
+    private readonly omnaiDevices = this.liveDataService.devices;
 
     private readonly _availableSources = signal<DataSourceInfo[]>([
         {
