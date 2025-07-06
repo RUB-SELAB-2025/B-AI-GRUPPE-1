@@ -234,11 +234,8 @@ export class DataSourceService {
       xScale: this.xScaleMinimap(),
       yScale: this.yScaleMinimap(),
       series: this.dummySeries(),
-      devices: this.dataSourceSelectionService.currentSource()?.id === 'omnaiscope' 
-        ? this.dataSourceSelectionService.omnaiDevices() || []
-        : [],
     }),
-    computation: ({ xScale, yScale, series, devices }) => {
+    computation: ({ xScale, yScale, series }) => {
       const lineGen = d3Line<{ time: Date; value: number }>()
         .x((d) => {
           const x = xScale(d.time);
@@ -253,12 +250,9 @@ export class DataSourceService {
         }));
 
         const pathData = lineGen(parsedValues) ?? '';
-        const device = devices.find(d => d.UUID === key);
-        const color = device ? `rgb(${device.color.r}, ${device.color.g}, ${device.color.b})` : 'steelblue';
         return {
           id: key,
           d: pathData,
-          color: color,
         };
       });
     },
@@ -275,11 +269,8 @@ export class DataSourceService {
       xScale: this.xScale(),
       yScale: this.yScale(),
       series: this.dummySeries(),
-      devices: this.dataSourceSelectionService.currentSource()?.id === 'omnaiscope' 
-        ? this.dataSourceSelectionService.omnaiDevices() || []
-        : [],
     }),
-    computation: ({ xScale, yScale, series, devices }) => {
+    computation: ({ xScale, yScale, series }) => {
       const lineGen = d3Line<{ time: Date; value: number }>()
         .x((d) => xScale(d.time))
         .y((d) => yScale(d.value));
@@ -291,12 +282,9 @@ export class DataSourceService {
         }));
 
         const pathData = lineGen(parsedValues) ?? '';
-        const device = devices.find(d => d.UUID === key);
-        const color = device ? `rgb(${device.color.r}, ${device.color.g}, ${device.color.b})` : 'steelblue';
         return {
           id: key,
           d: pathData,
-          color: color,
         };
       });
     },
