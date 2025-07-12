@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GraphComponent } from './graph.component';
 import {provideHttpClient} from '@angular/common/http';
+
 import { DataSourceService } from './graph-data.service';
 
 describe('GraphComponent', () => {
@@ -13,6 +14,7 @@ describe('GraphComponent', () => {
       providers: [
         provideHttpClient(),
         { provide: DataSourceService, useValue: {}}
+
       ]
     }).compileComponents();
 

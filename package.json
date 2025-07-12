@@ -10,6 +10,7 @@
     "build:angular":            "npm run prepare && npm run test:angular && npm exec -w angular-frontend ng build",
     "watch:angular":            "npm exec -w angular-frontend ng build --watch --configuration development",
     "test:angular":             "npm --workspace angular-frontend test",
+
     "compodoc:build":           "npm exec -w angular-frontend compodoc -p tsconfig.doc.json",
     "compodoc:build-and-serve": "npm exec -w angular-frontend compodoc -p tsconfig.doc.json -s",
     "compodoc:serve":           "npm exec -w angular-frontend compodoc -s",

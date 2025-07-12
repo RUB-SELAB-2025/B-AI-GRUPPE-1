@@ -3,13 +3,14 @@ import {join} from "path";
 import { existsSync } from "fs";
 import {app} from "electron"; 
 import * as net from 'net';
+import { omnaiscopeBackendManager } from './omnaiBackend';
 
 /**
  * @description BackendManager handles the logic needed to start and stop the local OmnAI-Backend.
  * It provides a function to start and stop the backend, as well as receiving the port on which the backend currently runs. 
  * @version implements v0.5.1 of the backend interface 
  */
-export const omnaiscopeBackendManager = (()=> { // singelton for only one possible encapsulated instance of the backend 
+export const analysisBackendManager = (()=> { // singelton for only one possible encapsulated instance of the backend
     let backendProcess : ChildProcess | null = null;
     let port : number = 0;  
 
@@ -50,8 +51,8 @@ export const omnaiscopeBackendManager = (()=> { // singelton for only one possib
      */
     function getBackendPath(): string {
         const exePath: string = app.isPackaged 
-        ? join(process.resourcesPath, "MiniOmni.exe") // production mode 
-        : join(__dirname, "..", "res", "omnai_BE", "MiniOmni.exe") // dev mode 
+        ? join(process.resourcesPath, "analysisBackend.exe") // production mode
+        : join(__dirname, "..", "res", "analysis_BE", "analysisBackend.exe") // dev mode
 
         return exePath; 
     }
@@ -66,7 +67,7 @@ export const omnaiscopeBackendManager = (()=> { // singelton for only one possib
         port = await getFreePort(); 
 
         if(existsSync(exePath)){
-            backendProcess = spawn(exePath, ["-w", "-p", port.toString()], {
+            backendProcess = spawn(exePath, ["-p", port.toString(), "-b", omnaiscopeBackendManager.getPort().toString()], {
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
             // read console buffer from BE because the backend does not delete the console buffer by itself

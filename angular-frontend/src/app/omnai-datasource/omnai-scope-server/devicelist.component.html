@@ -1,4 +1,6 @@
-<button (click)="getDevicesList()">Load devices list</button>
+@if (isConnected()) {
+  <button (click)="disconnectWebsocket()">Disconnect WebSocket</button>
+}
 @for (device of devices(); track device.UUID) {
 <ul>
     <li>
