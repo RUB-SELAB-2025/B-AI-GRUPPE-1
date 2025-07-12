@@ -1,3 +1,8 @@
+<span style="color: red; font-weight: bold;">
+The test cases can be found at the following link:  
+<a href="https://github.com/RUB-SELAB-2025/B-AI-GRUPPE-1/pull/33">https://github.com/RUB-SELAB-2025/B-AI-GRUPPE-1/pull/33</a>
+</span>
+
 # OmnAIView
 
 Welcome to OmnAIView! Let's get started!
