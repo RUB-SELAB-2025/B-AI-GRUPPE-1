@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, Menu, dialog} from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu, dialog, screen} from 'electron';
 import * as path from "path";
 import * as fs from 'fs';
 import { omnaiscopeBackendManager } from './omnaiBackend';
@@ -24,13 +24,12 @@ function getVersionPath(): string {
 }
 
 const versionInfo = JSON.parse(fs.readFileSync(getVersionPath(), 'utf-8'));
-
-const createWindow = (): void => {
+const createWindow = (width: number, height: number): void => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     icon: "./images/icon",
-    height: 600,
-    width: 800,
+    height: height,
+    width: width,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -672,7 +671,14 @@ const menuScope: Electron.MenuItemConstructorOptions[] = [
             mainWindow.webContents.toggleDevTools();
           }
         }
-      }
+      },
+            {
+        label: 'Präsentation-Reload',
+        click: () => {
+          app.relaunch();
+          app.exit(0);
+        }
+      },
     ]
   }
 ];
@@ -696,11 +702,11 @@ ipcMain.handle('get-analysis-backend-port', async () => {
 console.log("Current Analysis Backend Port is "+analysisBackendManager.getPort().toString())
 
 app.whenReady().then(() => {
-  createWindow();
-
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  createWindow(width, height);
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow(width, height);    
     }
   });
 });
