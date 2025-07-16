@@ -60,6 +60,66 @@ export class GraphComponent implements AfterViewInit {
   readonly fixedGuides = signal<number[]>([]);
   readonly fixedXGuides = signal<number[]>([]);
   readonly comments = signal<GraphComment[]>([]);
+  readonly syncMinimapViewport = effect(() => {
+    this.zoomWindowInMinimap();
+  });
+  readonly zoomWindowInMinimap = computed(() => {
+    const mainXScale = this.dataservice.xScale();
+    const mainYScale = this.dataservice.yScale();
+    const miniXScale = this.dataservice.xScaleMinimap();
+    const miniYScale = this.dataservice.yScaleMinimap();
+
+    const [x0, x1] = mainXScale.domain();
+    const [y0, y1] = mainYScale.domain();
+
+    return {
+      x: miniXScale(x0),
+      y: miniYScale(y1),
+      width: miniXScale(x1) - miniXScale(x0),
+      height: miniYScale(y0) - miniYScale(y1)
+    };
+  });
+
+  readonly minimapTransform = computed(() => {
+    const scaleX = this.minimapWidth / this.fullWidth;
+    const scaleY = this.minimapHeight / this.fullHeight;
+    const xTranslate = this.dataservice.margin.left * scaleX;
+    const yTranslate = this.dataservice.margin.top * scaleY;
+    return `translate(${xTranslate}, ${yTranslate})`;
+  });
+
+  readonly minimapPaths = computed(() => {
+    const paths = this.dataservice.pathsMinimap();
+    const xScale = this.dataservice.xScaleMinimap();
+    const yScale = this.dataservice.yScaleMinimap();
+
+    if (paths.length > 0) {
+      console.log('First path x-range:', {
+        min: xScale.invert(0),
+        max: xScale.invert(this.minimapWidth)
+      });
+    }
+
+    return paths;
+  });
+
+  readonly viewportRect = computed(() => {
+    const mainXScale = this.dataservice.xScale();
+    const mainYScale = this.dataservice.yScale();
+    const miniXScale = this.dataservice.xScaleMinimap();
+    const miniYScale = this.dataservice.yScaleMinimap();
+
+    const [x0, x1] = mainXScale.domain();
+    const [y0, y1] = mainYScale.domain();
+
+    return {
+      x: miniXScale(x0),
+      y: miniYScale(y1),
+      width: miniXScale(x1) - miniXScale(x0),
+      height: miniYScale(y0) - miniYScale(y1)
+    };
+  });
+
   readonly currentViewBox = signal({ x: 0, y: 0, width: 500, height: 250 });
   get defaultViewBox() {
     return {
@@ -143,6 +203,25 @@ export class GraphComponent implements AfterViewInit {
       setTimeout(() => {
         this.graphEl.nativeElement.focus();
       });
+
+      effect(() => {
+        const xScale = this.dataservice.xScaleMinimap();
+        console.log('Minimap X-Scale:', {
+          domain: xScale.domain().map(d => d.toString()),
+          range: xScale.range()
+        });
+
+        const paths = this.dataservice.pathsMinimap();
+        if (paths.length > 0) {
+          const points = paths[0].d.match(/(\d+\.?\d*)/g);
+          if (points && points.length >= 4) {
+            console.log('First point coordinates:', {
+              x: points[0],
+              y: points[1]
+            });
+          }
+        }
+      });
     }
   }
 
@@ -155,6 +234,38 @@ export class GraphComponent implements AfterViewInit {
 
     const svgElement = svgRef.nativeElement;
     svgElement.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+  }
+
+  onMiniMapClick(event: MouseEvent) {
+    const minimapSvg = (event.target as SVGElement).closest('svg.minimap');
+    if (!minimapSvg) return;
+
+    const rect = minimapSvg.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    const miniXScale = this.dataservice.xScaleMinimap();
+    const miniYScale = this.dataservice.yScaleMinimap();
+
+    const dataX = miniXScale.invert(clickX);
+    const dataY = miniYScale.invert(clickY);
+
+    const currentXDomain = this.dataservice.xScale().domain();
+    const currentYDomain = this.dataservice.yScale().domain();
+    const xRange = currentXDomain[1].getTime() - currentXDomain[0].getTime();
+    const yRange = currentYDomain[1] - currentYDomain[0];
+
+    const newXDomain: [Date, Date] = [
+      new Date(dataX.getTime() - xRange / 2),
+      new Date(dataX.getTime() + xRange / 2)
+    ];
+
+    const newYDomain: [number, number] = [
+      dataY - yRange / 2,
+      dataY + yRange / 2
+    ];
+
+    this.dataservice.setDomains(newXDomain, newYDomain);
   }
 
   onWheel(event: WheelEvent): void {
@@ -326,11 +437,11 @@ export class GraphComponent implements AfterViewInit {
             d3.select(this).attr('transform', `translate(${event.x},${event.y})`);
           })
       );
-    
+
     group.on('click', function (event) {
       event.stopPropagation();
     });
-      
+
     const tempText = group
       .append('text')
       .attr('class', 'comment-text')
@@ -347,12 +458,12 @@ export class GraphComponent implements AfterViewInit {
 
     const tspans = tempText.selectAll('tspan').nodes();
     const lineCount = tspans.length;
-    const lineHeightPx = 18; 
+    const lineHeightPx = 18;
     const verticalPadding = 25;
     const rectHeight = lineCount * lineHeightPx + verticalPadding;
     const rectWidth = 180;
 
-    tempText.remove(); 
+    tempText.remove();
 
     const textElement = group
       .append('text')
@@ -368,92 +479,92 @@ export class GraphComponent implements AfterViewInit {
       .attr('text-anchor', 'start');
 
     textElement.on('dblclick', function (event) {
-       event.stopPropagation();
-       const textEl = d3.select(this);
-       const currentText = textEl.attr('data-full-text') || textEl.text();
-       const parent = d3.select<SVGGElement, unknown>(this.parentNode as SVGGElement);
-       const rect = parent.select('rect');
-       const width = parseFloat(rect.attr('width')) - 20;
-       const height = parseFloat(rect.attr('height'));
+      event.stopPropagation();
+      const textEl = d3.select(this);
+      const currentText = textEl.attr('data-full-text') || textEl.text();
+      const parent = d3.select<SVGGElement, unknown>(this.parentNode as SVGGElement);
+      const rect = parent.select('rect');
+      const width = parseFloat(rect.attr('width')) - 20;
+      const height = parseFloat(rect.attr('height'));
 
-       textEl.style('display', 'none');
+      textEl.style('display', 'none');
 
-       const fo = parent.append('foreignObject')
-         .attr('x', 10)
-         .attr('y', 10)
-         .attr('width', width)
-         .attr('height', height - 20);
+      const fo = parent.append('foreignObject')
+        .attr('x', 10)
+        .attr('y', 10)
+        .attr('width', width)
+        .attr('height', height - 20);
 
-       const foBody = fo.append('xhtml:div')
-         .style('width', '100%')
-         .style('height', '100%');
+      const foBody = fo.append('xhtml:div')
+        .style('width', '100%')
+        .style('height', '100%');
 
-       const textarea = foBody.append('textarea')
-         .style('width', '100%')
-         .style('height', '100%')
-         .style('font-size', '14px')
-         .style('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
-         .style('box-sizing', 'border-box')
-         .text(currentText)
-         .on('blur', function () {
-            const newText = (this as HTMLTextAreaElement).value;
-            textEl
-              .text(newText)
-              .attr('data-full-text', newText)
-              .style('display', null);
-          
-            fo.remove();
-          
-            const padding = 20;
-            const newWidth = parseFloat(rect.attr('width')) - padding;
-          
-            wrapText(textEl, newWidth);
-          
-            const tspans = textEl.selectAll('tspan').nodes();
-            const lineCount = tspans.length;
-            const lineHeight = 18;
-            const verticalPadding = 25;
-            const newHeight = lineCount * lineHeight + verticalPadding;
-          
-            rect.attr('height', newHeight);
-          
-            parent.select<SVGTextElement>('.resize-handle')
-              .attr('y', newHeight - 6);
-          
-            parent.select<SVGTextElement>('.coord-text')
-              .attr('y', newHeight - 6);
-          })
-         .on('keydown', function (event) {
-           if (event.key === 'Enter' && !event.shiftKey) {
-             event.preventDefault();
-             (this as HTMLTextAreaElement).blur();
-           }
-         });
+      const textarea = foBody.append('textarea')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('font-size', '14px')
+        .style('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
+        .style('box-sizing', 'border-box')
+        .text(currentText)
+        .on('blur', function () {
+          const newText = (this as HTMLTextAreaElement).value;
+          textEl
+            .text(newText)
+            .attr('data-full-text', newText)
+            .style('display', null);
 
-       textarea.node()?.focus();
-    });  
+          fo.remove();
+
+          const padding = 20;
+          const newWidth = parseFloat(rect.attr('width')) - padding;
+
+          wrapText(textEl, newWidth);
+
+          const tspans = textEl.selectAll('tspan').nodes();
+          const lineCount = tspans.length;
+          const lineHeight = 18;
+          const verticalPadding = 25;
+          const newHeight = lineCount * lineHeight + verticalPadding;
+
+          rect.attr('height', newHeight);
+
+          parent.select<SVGTextElement>('.resize-handle')
+            .attr('y', newHeight - 6);
+
+          parent.select<SVGTextElement>('.coord-text')
+            .attr('y', newHeight - 6);
+        })
+        .on('keydown', function (event) {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            (this as HTMLTextAreaElement).blur();
+          }
+        });
+
+      textarea.node()?.focus();
+    });
 
     requestAnimationFrame(() => {
-      textElement.text(text); 
+      textElement.text(text);
       wrapText(textElement, rectWidth - 20);
     });
-      
+
     group
       .insert('rect', 'text')
       .attr('width', rectWidth)
       .attr('height', rectHeight)
-      .attr('fill', '#fff') 
+      .attr('fill', '#fff')
       .attr('stroke', '#c8c8c8')
       .attr('stroke-width', 1.2)
       .attr('rx', 8)
       .attr('ry', 8)
       .style('filter', 'drop-shadow(0 1px 3px rgba(0,0,0,0.15))');
-    
+
     group.select('text')
       .attr('font-family', "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif")
       .attr('font-weight', '500')
-      .attr('fill', '#333');  
-    
+      .attr('fill', '#333');
+
     const closeButton = group
       .append('text')
       .attr('class', 'close-button')
@@ -573,7 +684,7 @@ export class GraphComponent implements AfterViewInit {
         let word: string;
         let line: string[] = [];
         let lineNumber = 0;
-        const lineHeight = 1.2; 
+        const lineHeight = 1.2;
         const x = text.attr('x');
         const y = text.attr('y');
         const dy = 0;
@@ -583,7 +694,7 @@ export class GraphComponent implements AfterViewInit {
           .attr('y', y)
           .attr('dy', `${dy}em`)
           .text('');
-      
+
         while ((word = words.pop()!)) {
           line.push(word);
           tspan.text(line.join(' '));
@@ -648,7 +759,7 @@ export class GraphComponent implements AfterViewInit {
       .attr("pointer-events", "none")
       .attr("x", 5)
       .attr("y", d => yaxis(d) - 5)
-      .attr("fill", "red")
+      .attr("fill", "crimson")
       .attr("font-size", "12px")
       .text(d => d.toFixed(1));
 
@@ -763,16 +874,6 @@ export class GraphComponent implements AfterViewInit {
   fullWidth = window.screen.availWidth;
   fullHeight = window.screen.availHeight;
 
-  minimapTransform = computed(() => {
-    const scaleX = this.minimapWidth / this.fullWidth;
-    const scaleY = this.minimapHeight / this.fullHeight;
-
-    const xTranslate = this.dataservice.margin.left * scaleX;
-    const yTranslate = this.dataservice.margin.top * scaleY;
-
-    return `translate(${xTranslate}, ${yTranslate})`;
-  })
-
   get viewRectX() {
     return this.minimapXScale(this.currentViewBox().x);
   }
@@ -787,23 +888,6 @@ export class GraphComponent implements AfterViewInit {
 
   get viewRectHeight() {
     return this.minimapYScale(this.currentViewBox().height) - this.minimapYScale(0);
-  }
-
-  onMiniMapClick(event: MouseEvent) {
-    const svg = (event.target as SVGElement).closest('svg');
-    if (!svg) return;
-
-    const bounds = svg.getBoundingClientRect();
-    const relX = event.clientX - bounds.left;
-    const relY = event.clientY - bounds.top;
-
-    const scaleX = this.fullWidth / this.minimapWidth;
-    const scaleY = this.fullHeight / this.minimapHeight;
-
-    const newCenterX = relX * scaleX;
-    const newCenterY = relY * scaleY;
-
-    this.setViewportAround(newCenterX, newCenterY);
   }
 
   setViewportAround(centerX: number, centerY: number) {
