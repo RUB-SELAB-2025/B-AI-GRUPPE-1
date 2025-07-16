@@ -12,8 +12,11 @@ import {
   type ElementRef,
   AfterViewInit
 } from '@angular/core';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { NumberValue, transition } from 'd3';
 import { axisBottom, axisLeft } from 'd3-axis';
 import { select } from 'd3-selection';
+import { timeFormat } from 'd3-time-format';
 import { DeviceListComponent } from "../omnai-datasource/omnai-scope-server/devicelist.component";
 import { ResizeObserverDirective } from '../shared/resize-observer.directive';
 import { StartDataButtonComponent } from "../source-selection/start-data-from-source.component";
@@ -29,6 +32,9 @@ interface GraphComment {
   y: number;
   text: string;
 }
+import { makeXAxisTickFormatter, type xAxisMode } from './x-axis-formatter.utils';
+import { DarkmodeComponent } from '../darkmode/darkmode.component';
+import { AdvancedModeService } from '../advanced-mode/advanced-mode.service';
 
 @Component({
   selector: 'app-graph',
@@ -37,6 +43,7 @@ interface GraphComment {
   providers: [DataSourceService],
   styleUrls: ['./graph.component.css'],
   imports: [CommonModule, ResizeObserverDirective, JsonPipe, FormsModule, StartDataButtonComponent, DeviceListComponent],
+  imports: [DarkmodeComponent, ResizeObserverDirective, JsonPipe, StartDataButtonComponent, DeviceListComponent, MatSlideToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GraphComponent implements AfterViewInit {
@@ -142,6 +149,8 @@ export class GraphComponent implements AfterViewInit {
   commentInputText = signal('')
 
   hasZoomed = false;
+
+  protected readonly advancedMode = inject(AdvancedModeService);
 
   private readonly platform = inject(PLATFORM_ID);
   isInBrowser = isPlatformBrowser(this.platform);
@@ -794,11 +803,24 @@ export class GraphComponent implements AfterViewInit {
     return `translate(${xScale.range()[0]}, 0)`;
   });
 
+  /**
+   * Signal to control the x-axis time mode. Relative starts with 0, absolute reflects the time of day the data was recorded.
+   */
+  readonly xAxisTimeMode = signal<xAxisMode>("absolute");
+
+  onXAxisTimeModeToggle(checked: boolean): void {
+    this.xAxisTimeMode.set(checked ? 'relative' : 'absolute');
+  }
   updateXAxisInCanvas = effect(() => {
     if (!this.isInBrowser) return;
     const x = this.dataservice.xScale();
+    const domain = x.domain();
+    const formatter = makeXAxisTickFormatter(this.xAxisTimeMode(), domain[0]);
     const g = this.axesContainer().nativeElement;
-    select(g).transition(transition()).duration(300).call(axisBottom(x));
+    select(g)
+      .transition(transition())
+      .duration(300)
+      .call(axisBottom(x).tickFormat(formatter));
   });
 
   updateYAxisInCanvas = effect(() => {
@@ -887,4 +909,6 @@ export class GraphComponent implements AfterViewInit {
       height: viewHeight
     });
   }
+}
+
 }

@@ -1,6 +1,7 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { GraphComponent } from './graph.component';
-import {provideHttpClient} from '@angular/common/http';
 
 import { DataSourceService } from './graph-data.service';
 
@@ -11,12 +12,9 @@ describe('GraphComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [GraphComponent],
-      providers: [
-        provideHttpClient(),
-        { provide: DataSourceService, useValue: {}}
-
-      ]
-    }).compileComponents();
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    })
+      .compileComponents();
 
     fixture = TestBed.createComponent(GraphComponent);
     component = fixture.componentInstance;
