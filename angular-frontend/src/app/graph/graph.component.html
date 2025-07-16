@@ -23,8 +23,7 @@
   -->
 
 <svg #graphContainer class="main-graph" tabindex="0" (keydown)="onKeyDown($event)" (mousemove)="onMouseMove($event)" (click)="onClick($event)"
-    (contextmenu)="onRightClick($event)" appResizeObserver (resize)="updateGraphDimensions($event)"
-     (click)="onMiniMapClick($event)">
+    (contextmenu)="onRightClick($event)" appResizeObserver (resize)="updateGraphDimensions($event)">
     <defs>
         <clipPath id="graphClip">
             <rect [attr.x]="0" [attr.y]="-15" [attr.width]="dataservice.innerWidth()"
