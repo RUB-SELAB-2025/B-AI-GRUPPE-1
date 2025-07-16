@@ -235,35 +235,41 @@ export class GraphComponent implements AfterViewInit {
   }
 
   onMiniMapClick(event: MouseEvent) {
-    const minimapSvg = (event.currentTarget as SVGElement);
-    const rect = minimapSvg.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
+  event.stopPropagation();
 
-    const miniXScale = this.dataservice.xScaleMinimap();
-    const miniYScale = this.dataservice.yScaleMinimap();
+  const minimapSvg = event.currentTarget as SVGElement;
+  const rect = minimapSvg.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  const clickY = event.clientY - rect.top;
 
-    const dataX = miniXScale.invert(clickX);
-    const dataY = miniYScale.invert(clickY);
-
-    const currentXDomain = this.dataservice.xScale().domain();
-    const currentYDomain = this.dataservice.yScale().domain();
-    const xRange = currentXDomain[1].getTime() - currentXDomain[0].getTime();
-    const yRange = currentYDomain[1] - currentYDomain[0];
-
-    const newXDomain: [Date, Date] = [
-      new Date(dataX.getTime() - xRange / 2),
-      new Date(dataX.getTime() + xRange / 2)
-    ];
-
-    const newYDomain: [number, number] = [
-      dataY - yRange / 2,
-      dataY + yRange / 2
-    ];
-
-    this.dataservice.setDomains(newXDomain, newYDomain);
-    event.stopPropagation();
+  const miniXScale = this.dataservice.xScaleMinimap();
+  const miniYScale = this.dataservice.yScaleMinimap();
+  if (typeof miniXScale.invert !== 'function' || typeof miniYScale.invert !== 'function') {
+    console.warn('Scales are not invertible');
+    return;
   }
+
+  const dataX = miniXScale.invert(clickX);
+  const dataY = miniYScale.invert(clickY);
+  const currentXDomain = this.dataservice.xScale().domain();
+  const currentYDomain = this.dataservice.yScale().domain();
+
+  const xRange = currentXDomain[1].getTime() - currentXDomain[0].getTime();
+  const yRange = currentYDomain[1] - currentYDomain[0];
+
+  const newXDomain: [Date, Date] = [
+    new Date(dataX.getTime() - xRange / 2),
+    new Date(dataX.getTime() + xRange / 2),
+  ];
+  const newYDomain: [number, number] = [
+    dataY - yRange / 2,
+    dataY + yRange / 2,
+  ];
+console.log('miniXScale.invert:', typeof this.dataservice.xScaleMinimap().invert);
+console.log('miniYScale.invert:', typeof this.dataservice.yScaleMinimap().invert);
+
+  this.dataservice.setDomains(newXDomain, newYDomain);
+}
 
   onWheel(event: WheelEvent): void {
     if (!this.isInBrowser) return;
