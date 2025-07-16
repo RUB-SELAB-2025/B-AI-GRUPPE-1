@@ -169,6 +169,10 @@ export class DataSourceService {
     if (!isFinite(result.minTimestamp) || !isFinite(result.minValue)) return;
     const xDomainRange = result.maxTimestamp - result.minTimestamp;
     const xExpansion = xDomainRange * expandBy;
+
+    const yDomainRange = result.maxValue - result.minValue;
+    const yExpansion = yDomainRange * expandBy;
+
     this.$xDomain.set([
       new Date(result.minTimestamp - xExpansion),
       new Date(result.maxTimestamp + xExpansion),

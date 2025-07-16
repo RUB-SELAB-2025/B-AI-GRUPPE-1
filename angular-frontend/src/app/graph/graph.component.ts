@@ -21,7 +21,6 @@ import { DeviceListComponent } from "../omnai-datasource/omnai-scope-server/devi
 import { ResizeObserverDirective } from '../shared/resize-observer.directive';
 import { StartDataButtonComponent } from "../source-selection/start-data-from-source.component";
 import { DataSourceService } from './graph-data.service';
-import { transition } from 'd3-transition';
 import { zoomIdentity, ZoomTransform } from 'd3-zoom';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -42,8 +41,7 @@ import { AdvancedModeService } from '../advanced-mode/advanced-mode.service';
   templateUrl: './graph.component.html',
   providers: [DataSourceService],
   styleUrls: ['./graph.component.css'],
-  imports: [CommonModule, ResizeObserverDirective, JsonPipe, FormsModule, StartDataButtonComponent, DeviceListComponent],
-  imports: [DarkmodeComponent, ResizeObserverDirective, JsonPipe, StartDataButtonComponent, DeviceListComponent, MatSlideToggleModule],
+  imports: [DarkmodeComponent, ResizeObserverDirective, JsonPipe, FormsModule, CommonModule, StartDataButtonComponent, DeviceListComponent, MatSlideToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class GraphComponent implements AfterViewInit {
@@ -909,6 +907,4 @@ export class GraphComponent implements AfterViewInit {
       height: viewHeight
     });
   }
-}
-
 }
