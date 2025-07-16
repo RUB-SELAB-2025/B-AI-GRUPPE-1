@@ -7,7 +7,6 @@ import { DummyDataService } from '../random-data-server/random-data.service';
 @Component({
     selector: 'app-device-list',
     templateUrl: './devicelist.component.html',
-    styleUrl: './devicelist.component.css',
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
