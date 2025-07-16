@@ -59,11 +59,21 @@ svg:focus-visible {
     position: absolute;
     right: 10px;
     top: 10px;
+    width: 200px;    
+    height: 120px;        
     border: 1px solid #aaa;
     background-color: white;
-    opacity: 0.8;
-    z-index: 1000;
+    padding: 0;
+    margin: 0;
     overflow: hidden;
+}
+
+.minimap-container svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .viewport-rect {
@@ -78,11 +88,11 @@ svg:focus-visible {
 .Expand {
     position: absolute;
     right: 5px;
-    bottom: 5px;
+    bottom: 0px;
     padding: 2px 6px;
     font-size: 12px;
     background: white;
-    border: 1px solid #ccc;
+    border: none;
     border-radius: 3px;
     cursor: pointer;
     z-index: 1000;
