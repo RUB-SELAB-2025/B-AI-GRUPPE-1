@@ -19,14 +19,7 @@
                     [attr.y2]="dataservice.yScale()(y)" stroke="transparent" stroke-width="20" pointer-events="stroke"
                     (mouseenter)="hoveredGuide.set(y)" (mouseleave)="hoveredGuide.set(null)" />
 
-                <line [attr.x1]="0" [attr.y1]="dataservice.yScale()(y)" [attr.x2]="dataservice.innerWidth()"
-                    [attr.y2]="dataservice.yScale()(y)" stroke="red" stroke-width="1" stroke-dasharray="2,2"
-                    shape-rendering="crispEdges" pointer-events="visible"
-                    [attr.stroke-width]="hoveredGuide() === y ? 3 : 1" stroke-dasharray="2,2"
-                    (mouseenter)="hoveredGuide.set(y)" (mouseleave)="hoveredGuide.set(null)" cursor="ns-resize" />
-                }
-            </g>
-            <g #commentLayer></g>
+        <g #xAxis [attr.transform]="xAxisTransformString()">
         </g>
         <g #xAxis [attr.transform]="xAxisTransformString()"></g>
         <g #yAxis [attr.transform]="yAxisTransformString()"></g>
@@ -46,9 +39,18 @@
     </div>
 </div>
 
+<div class="button-wrapper">
 <app-start-data-button />
 <app-device-list />
+<mat-slide-toggle [checked]="advancedMode.enabled()" (change)="advancedMode.toggle()">
+    Advanced Mode
+</mat-slide-toggle>
+<mat-slide-toggle [checked]="xAxisTimeMode() === 'relative'" (change)="onXAxisTimeModeToggle($event.checked)">
+    Relative Time
+</mat-slide-toggle>
 
+<app-darkmode></app-darkmode>
+</div>
 <div style="display: none;">
     <h4>Debug Output</h4>
 

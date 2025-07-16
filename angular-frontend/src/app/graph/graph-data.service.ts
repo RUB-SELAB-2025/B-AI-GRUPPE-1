@@ -17,15 +17,24 @@ import { DataSourceSelectionService } from '../source-selection/data-source-sele
 type UnwrapSignal<T> = T extends import('@angular/core').Signal<infer U> ? U : never;
 
 /**
+ * Describes the potential Domain values for the x-axis
+ * */
+type xDomainType = Date;
+type xDomainTuple = [xDomainType, xDomainType];
+
+const defaultXDomain: xDomainTuple = [new Date(), new Date(Date.now() - 24 * 60 * 60 * 1000)];
+
+/**
  * Provide the data to be displayed in the {@link GraphComponent}
- */
-@Injectable({
-  providedIn: 'root',
-})
+ * This class also provides the axis descriptions. As these are dependend on the size of the current
+ * graph, this service needs to be provided in any component that creates a graph to ensure that
+ * every graph has its own state management.
+ *  */
+@Injectable()
 export class DataSourceService {
   private readonly $graphDimensions = signal({ width: 800, height: 600 });
-  private readonly $xDomain = signal<[Date, Date]>([new Date(2020), new Date()]);
-  private readonly $yDomain = signal<[number, number]>([0, 100]);
+  private readonly $xDomain = signal<xDomainTuple>(defaultXDomain);
+  private readonly $yDomain = signal([0, 100]);
   private readonly dataSourceSelectionService = inject(DataSourceSelectionService);
   private readonly $isZoomed = signal(false);
   private readonly $xDomainMinimap = signal<[Date, Date]>([new Date(2020), new Date()]);
@@ -104,9 +113,11 @@ readonly zoomWindowInMinimap = computed(() => {
       yDomain: this.$yDomain(),
     }),
     computation: ({ dimensions, yDomain }) => {
-      const { top, bottom } = this.margin;
-      const height = dimensions.height - top - bottom;
-      return d3ScaleLinear().domain(yDomain).range([height, 0]);
+      const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+      const height = dimensions.height - margin.top - margin.bottom;
+      return d3ScaleLinear()
+        .domain(yDomain)
+        .range([height, 0]);
     },
   });
 
@@ -130,7 +141,7 @@ readonly zoomWindowInMinimap = computed(() => {
     }
   }
 
-  readonly updateScalesWhenDataChanges = effect(() => {
+  updateScalesWhenDataChanges = effect(() => {
     const data = this.dummySeries();
     if (this.$isZoomed()) return;
 
@@ -161,17 +172,21 @@ readonly zoomWindowInMinimap = computed(() => {
     );
 
     if (!isFinite(result.minTimestamp) || !isFinite(result.minValue)) return;
-
     const xDomainRange = result.maxTimestamp - result.minTimestamp;
     const xExpansion = xDomainRange * expandBy;
-
-    const yDomainRange = result.maxValue - result.minValue;
-    const yExpansion = yDomainRange * expandBy;
-
     this.$xDomain.set([
       new Date(result.minTimestamp - xExpansion),
       new Date(result.maxTimestamp + xExpansion),
     ]);
+    if (xDomainRange === 0) {
+      this.$xDomain.set(defaultXDomain);
+    }
+    else {
+      this.$xDomain.set([
+        new Date(result.minTimestamp),
+        new Date(result.maxTimestamp)
+      ]);
+    }
 
     this.$yDomain.set([
       result.minValue - yExpansion,
@@ -302,7 +317,4 @@ readonly pathsMinimap = linkedSignal({
       });
     },
   });
-
-
-
 }
