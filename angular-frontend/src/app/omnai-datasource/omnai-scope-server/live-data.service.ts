@@ -122,7 +122,7 @@ export class OmnAIScopeDataService implements DataSource {
       if(!this.socket){
         throw new Error("Websocket is not defined");
       }
-      this.socket.send(deviceUuids);
+      this.socket.send(message);
     });
 
     let ignoreCounter = 0;
