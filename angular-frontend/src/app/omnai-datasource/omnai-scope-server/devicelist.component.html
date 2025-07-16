@@ -1,16 +1,15 @@
-@if (isLiveDataConnected() || isRandomDataConnected()) {
-  <button (click)="disconnectSource()" id="buttonDisconnectSource">🛑</button>
-}
-@for (device of devices(); track device.UUID) {
-<ul>
-    <li>
-        UUID: {{ device.UUID }} |
-        Color - R: {{ device.color.r }},
-        G: {{ device.color.g }},
-        B: {{ device.color.b }}
-    </li>
-
-</ul>
-} @empty {
-No known devices found
-}
+<div class="device-list-container">
+    @if (isLiveDataConnected() || isRandomDataConnected()) {
+        <button (click)="disconnectSource()" id="buttonDisconnectSource">🛑</button>
+    }
+    @for (device of devices(); track device.UUID) {
+        <span class="device-info">
+            UUID: {{ device.UUID }} |
+            Color - R: {{ device.color.r }},
+            G: {{ device.color.g }},
+            B: {{ device.color.b }}
+        </span>
+    } @empty {
+        No known devices found
+    }
+</div>

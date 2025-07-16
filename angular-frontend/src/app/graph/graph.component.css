@@ -151,3 +151,18 @@ svg:focus-visible {
     align-items: center;
     height: 50px;
 }
+
+.device-list-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
+.device-list-container button {
+    margin-right: 10px;
+}
+
+.device-info {
+    white-space: nowrap;
+}
