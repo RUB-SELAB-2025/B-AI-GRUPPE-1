@@ -35,6 +35,11 @@ Formatting needs to be similar to the dataformat of the old OmnAIView data expor
 - Add axis mode: Allow to switch between absolute and relative x-axis timestamps(#58)
 - Add webSocket disconnect and disable device polling while active WebSocket (#97)
 - Secure reloading of entrypoint via did-fail-load Event in Electron (#100)
+- Add issue template (#89)
+- Update contribution workflow (#89)
+- Add darkmode via button toggle (#121)
+- Add workshop/advanced mode for car repair shops (#118)
+
 
 ### Changed 
 
@@ -47,6 +52,9 @@ Formatting needs to be similar to the dataformat of the old OmnAIView data expor
 - Reduce file size of csv-file-import.service.spec.ts by replacing hard-coded string (#78)
 - Privacy oriented default setting to not share data with Google (#82)
 - Fixed ci and `package-lock.json` files to allow installing the project with `npm ci` (#83)
+- Stop-Button for Random Data Server (#115)
+- Change start-data button to mat-icon play_arrow button (#107)
+- Update PR Template to be more clear (#93)
 
 
 ### Removed 
