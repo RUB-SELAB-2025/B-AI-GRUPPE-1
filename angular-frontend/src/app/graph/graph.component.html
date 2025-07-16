@@ -1,6 +1,6 @@
-<svg #graphContainer class="main-graph" tabindex="0" (keydown)="onKeyDown($event)" appResizeObserver
-    (resize)="updateGraphDimensions($event)" (mousemove)="onMouseMove($event)" (click)="onClick($event)"
-    (contextmenu)="onRightClick($event)" appResizeObserver (resize)="updateGraphDimensions($event)">>
+<svg #graphContainer class="main-graph" tabindex="0" (keydown)="onKeyDown($event)" (mousemove)="onMouseMove($event)" (click)="onClick($event)"
+    (contextmenu)="onRightClick($event)" appResizeObserver (resize)="updateGraphDimensions($event)" 
+     (click)="onMiniMapClick($event)">
     <defs>
         <clipPath id="graphClip">
             <rect [attr.x]="0" [attr.y]="-15" [attr.width]="dataservice.innerWidth()"
@@ -28,9 +28,10 @@
             </g>
             <g #commentLayer></g>
         <g #xAxis [attr.transform]="xAxisTransformString()"></g>
+            </g>
         <g #xAxis [attr.transform]="xAxisTransformString()"></g>
         <g #yAxis [attr.transform]="yAxisTransformString()"></g>
-    </g></g>
+    </g>
 </svg>
 
 <div *ngIf="commentInputVisible()" class="comment-input"
@@ -125,7 +126,7 @@
             [attr.width]="viewportRect().width" [attr.height]="viewportRect().height" fill="rgba(0,0,0,0.1)"
             stroke="#666" stroke-width="1" />
 
-        <foreignObject x="75%" y="85%" width="55%" height="15%">
+        <foreignObject x="71%" y="85%" width="55%" height="15%">
             <button class="expand-button" (click)="resetZoom(); $event.stopPropagation()">
                 Expand
             </button>

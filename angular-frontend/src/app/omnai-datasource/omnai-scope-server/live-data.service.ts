@@ -55,7 +55,7 @@ export class OmnAIScopeDataService implements DataSource {
   readonly #httpClient = inject(HttpClient);
 
   private setupDevicePolling(): void {
-    const pollInterval_ms = 15 * 1000;
+    const pollInterval_ms = 1000;
     timer(0, pollInterval_ms )
       .pipe(
         filter(() => !this.isConnected() && this.port() !== null),
@@ -122,7 +122,7 @@ export class OmnAIScopeDataService implements DataSource {
       if(!this.socket){
         throw new Error("Websocket is not defined");
       }
-      this.socket.send(deviceUuids);
+      this.socket.send(message);
     });
 
     let ignoreCounter = 0;

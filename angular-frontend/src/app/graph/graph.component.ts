@@ -235,9 +235,7 @@ export class GraphComponent implements AfterViewInit {
   }
 
   onMiniMapClick(event: MouseEvent) {
-    const minimapSvg = (event.target as SVGElement).closest('svg.minimap');
-    if (!minimapSvg) return;
-
+    const minimapSvg = (event.currentTarget as SVGElement);
     const rect = minimapSvg.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
@@ -264,6 +262,7 @@ export class GraphComponent implements AfterViewInit {
     ];
 
     this.dataservice.setDomains(newXDomain, newYDomain);
+    event.stopPropagation();
   }
 
   onWheel(event: WheelEvent): void {
