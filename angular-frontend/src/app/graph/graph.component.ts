@@ -31,6 +31,7 @@ import {
   inject,
   PLATFORM_ID,
   signal,
+  OnInit,
   viewChild,
   ViewChild,
   type ElementRef,
@@ -63,8 +64,8 @@ import { AdvancedModeService } from '../advanced-mode/advanced-mode.service';
   selector: 'app-graph',
   standalone: true,
   templateUrl: './graph.component.html',
-  providers: [DataSourceService],
   styleUrls: ['./graph.component.css'],
+  providers: [DataSourceService],
   imports: [DarkmodeComponent, ResizeObserverDirective, JsonPipe, FormsModule, CommonModule, StartDataButtonComponent, DeviceListComponent, MatSlideToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -217,6 +218,7 @@ export class GraphComponent implements AfterViewInit {
     });
   }
 
+  showFadeOut = false;
   currentTransform: ZoomTransform = zoomIdentity;
   ngAfterViewInit(): void {
     if (this.isInBrowser) {
@@ -225,6 +227,9 @@ export class GraphComponent implements AfterViewInit {
       setTimeout(() => {
         this.graphEl.nativeElement.focus();
       });
+      setTimeout(() => {
+      this.showFadeOut = true;
+    }, 5000);
 
       effect(() => {
         const xScale = this.dataservice.xScaleMinimap();

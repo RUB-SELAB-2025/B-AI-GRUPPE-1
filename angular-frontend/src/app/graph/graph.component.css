@@ -190,3 +190,46 @@ svg:focus-visible {
 .device-info {
     white-space: nowrap;
 }
+
+.animated-text {
+  overflow: visible;
+}
+
+.write-text {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: writeAnimation 4s forwards;
+  font-size: 48px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.write-text.dark-theme {
+    stroke: white;
+}
+@keyframes writeAnimation {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.fade-out {
+  animation: fadeOutAnimation 1s forwards;
+  animation-delay: 5s;
+}
+
+@keyframes fadeOutAnimation {
+  to {
+    opacity: 0;
+  }
+}
+
+.intro-text {
+  opacity: 1;
+  transition: opacity 2s ease-in-out; 
+}
+
+.intro-text.fade-out {
+  opacity: 0;
+}
