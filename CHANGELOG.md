@@ -40,7 +40,6 @@ Formatting needs to be similar to the dataformat of the old OmnAIView data expor
 - Add darkmode via button toggle (#121)
 - Add workshop/advanced mode for car repair shops (#118)
 
-
 ### Changed 
 
 - BREAKING CHANGE: Update OmnAIScope Dataserver from v0.4.0 to v0.5.0
@@ -55,7 +54,6 @@ Formatting needs to be similar to the dataformat of the old OmnAIView data expor
 - Stop-Button for Random Data Server (#115)
 - Change start-data button to mat-icon play_arrow button (#107)
 - Update PR Template to be more clear (#93)
-
 
 ### Removed 
 

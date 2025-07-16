@@ -67,11 +67,18 @@ export class OmnAIScopeDataService implements DataSource {
       });
   }
   readonly port = inject(BackendPortService).port;
+  readonly analysisPort = inject(BackendPortService).analysisPort;
   readonly serverUrl = computed(() => {
     const port = this.port();
     if (port === null) throw new Error('Port not initialized');
     return `127.0.0.1:${port}`;
   });
+  readonly analysisServerUrl = computed(()=> {
+    const analysisPort = this.analysisPort();
+    if (analysisPort === null) throw new Error('Port not initialized');
+    return `127.0.0.1:${analysisPort}`;
+  });
+
 
   // Abrufen der verfügbaren Geräte vom Server
   public getDevices(): Observable<DeviceInformation[]> {
@@ -101,7 +108,8 @@ export class OmnAIScopeDataService implements DataSource {
       return;
     }
 
-    const wsUrl = `ws://${this.serverUrl()}/ws`;
+    const wsUrl = `ws://${this.analysisServerUrl()}/ws`;
+    console.log("ANALYSIS BACKEND URL "+this.analysisServerUrl());
     this.socket = new WebSocket(wsUrl);
 
     this.socket.addEventListener('open', () => {
@@ -110,6 +118,7 @@ export class OmnAIScopeDataService implements DataSource {
 
       // Send start message
       const deviceUuids = this.devices().map(device => device.UUID).join(" ");
+      const message = `${deviceUuids} 2000`;
       if(!this.socket){
         throw new Error("Websocket is not defined");
       }

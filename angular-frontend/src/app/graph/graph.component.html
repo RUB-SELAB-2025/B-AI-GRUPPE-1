@@ -1,15 +1,44 @@
-<svg #graphContainer appResizeObserver (resize)="updateGraphDimensions($event)">
+<svg #graphContainer class="main-graph" tabindex="0" (keydown)="onKeyDown($event)" appResizeObserver
+    (resize)="updateGraphDimensions($event)" (mousemove)="onMouseMove($event)" (click)="onClick($event)"
+    (contextmenu)="onRightClick($event)" appResizeObserver (resize)="updateGraphDimensions($event)">>
+    <defs>
+        <clipPath id="graphClip">
+            <rect [attr.x]="0" [attr.y]="-15" [attr.width]="dataservice.innerWidth()"
+                [attr.height]="dataservice.innerHeight()+ 15" />
+        </clipPath>
+    </defs>
     <g [attr.transform]="marginTransform()">
+        <g clip-path="url(#graphClip)">
+            <g #grid></g>
+            @for (path of dataservice.paths(); track $index) {
+            <path [attr.d]="path.d" fill="none" stroke="steelblue" stroke-width="2" />
+            }
+            <g #guideline>
+                @for (y of fixedGuides(); track y) {
+                <line [attr.x1]="0" [attr.y1]="dataservice.yScale()(y)" [attr.x2]="dataservice.innerWidth()"
+                    [attr.y2]="dataservice.yScale()(y)" stroke="transparent" stroke-width="20" pointer-events="stroke"
+                    (mouseenter)="hoveredGuide.set(y)" (mouseleave)="hoveredGuide.set(null)" />
 
         <g #xAxis [attr.transform]="xAxisTransformString()">
-
         </g>
+        <g #xAxis [attr.transform]="xAxisTransformString()"></g>
         <g #yAxis [attr.transform]="yAxisTransformString()"></g>
-        @for (path of dataservice.paths(); track $index) {
-        <path [attr.d]="path.d" fill="none" stroke="steelblue" stroke-width="2" />
-        }
     </g>
 </svg>
+
+<div *ngIf="commentInputVisible()" class="comment-input"
+    [style.left.px]="commentInputPosition().x + dataservice.margin.left"
+    [style.top.px]="commentInputPosition().y + dataservice.margin.top">
+    <textarea [value]="commentInputText()" (input)="commentInputText.set($any($event.target).value)"
+        placeholder="Enter comment..." rows="2">
+    </textarea>
+
+    <div class="comment-button-row">
+        <button (click)="submitComment()">Add</button>
+        <button (click)="cancelComment()">Cancel</button>
+    </div>
+</div>
+
 <div class="button-wrapper">
 <app-start-data-button />
 <app-device-list />
@@ -60,4 +89,17 @@
         <pre>{{ dataservice.graphDimensions() | json }}</pre>
     </div>
 
+</div>
+
+<div class="minimap-container" *ngIf="hasZoomed">
+    <svg class="mini-map" [attr.width]="minimapWidth" [attr.height]="minimapHeight" >
+        <g [attr.transform]="marginTransform()">
+            @for (path of dataservice.pathsMinimap(); track $index) {
+            <path [attr.d]="path.d" fill="none" stroke="gray" stroke-width="0.5" />
+            }
+            <rect class="viewport-rect" [attr.x]="viewRectX" [attr.y]="viewRectY" [attr.width]="viewRectWidth"
+                [attr.height]="viewRectHeight" fill="rgba(0, 0, 0, 0.1)" stroke="black" stroke-width="0.5" />
+        </g>
+    </svg>
+    <button class="Expand" (click)="resetZoom()">Expand</button>
 </div>

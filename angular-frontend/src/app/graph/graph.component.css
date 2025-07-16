@@ -1,4 +1,4 @@
-svg {
+svg.main-graph {
     min-width: 400px;
     min-height: 300px;
     width: 100%;
@@ -7,6 +7,76 @@ svg {
     display: block;
     box-sizing: border-box;
 }
+
+svg:focus, svg:focus-visible {outline:none}
+
+.comment-input {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.comment-input textarea {
+    width: 200px;
+    resize: none;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.comment-input button {
+    align-self: flex-end; 
+    padding: 4px 10px;
+    font-size: 14px;
+}
+
+.comment-button-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 6px;
+}
+
+.comment-button-row button {
+    min-width: 90px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #eee;
+    cursor: pointer;
+}
+
+.minimap-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 1px solid #aaa;
+  background-color: white;
+  opacity: 0.8;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.viewport-rect {
+  fill: none;
+  stroke: none;
+  stroke-width: 1;
+}
+
+.Expand {
+  margin-top: 4px;
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  cursor: pointer;
 
 .button-wrapper {
     display: flex;
